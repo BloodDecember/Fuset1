@@ -15,27 +15,17 @@ using OpenQA.Selenium.Remote;
 
 namespace Fuset
 {
+    
     public partial class Form1 : Form
     {
         string PuthToPicture; //Переменная для хранения пути к картинке капчи на компьютере
         double winnings = 0;
+        int Time = 0;
 
-        public Form1()
-        {
-            InitializeComponent();
-            Rucaptcha.Key = "";
-        }
-
-        private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e)
-        {
-            richTextBox1.AppendText(listBox1.SelectedItem.ToString() + "\n");
-            richTextBox1.AppendText(listBox1.SelectedIndex.ToString() + "\n");
-        }
-
-        private void button1_Click(object sender, EventArgs e)
+        public void Step()
         {
             ChromeOptions options = new ChromeOptions();
-            //options.AddArgument("--headless");
+            options.AddArgument("--headless");
             //options.AddArgument("--disable-gpu");
             //options.AddArgument("--no-sandbox");
             //options.AddArgument("--ignore-certificate-errors");
@@ -49,113 +39,126 @@ namespace Fuset
                     driver.Navigate().GoToUrl("https://freebitco.in/");
                     try
                     {
-                        driver.FindElement(By.CssSelector(".login_menu_button")).Click();
-                        richTextBox1.AppendText("Вход...");
-                        driver.FindElement(By.Id("login_form_btc_address")).SendKeys("blooddecember@gmail.com");
-                        driver.FindElement(By.Id("login_form_password")).SendKeys("");
-                        driver.FindElement(By.Id("login_button")).Click();
+                        Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60;
+                        label2.Text = Convert.ToString(Time);
+                        driver.Quit();
+                        break;
                     }
-                    catch (OpenQA.Selenium.NoSuchElementException)
-                    {
-                        richTextBox1.AppendText("Вход не требуется.");
-                        //logIn = true;
-                    }
-                    //richTextBox1.AppendText(Convert.ToString((driver.FindElement(By.Id("btc_usd_price")).Text + "\n")));
-                    break;
-            }
-            driver.FindElement(By.Id("switch_captchas_button")).Click();
-            IWebElement logo = driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/div[1]/img"));
-            String logoSRC = logo.GetAttribute("src");
-            Uri imageURL = new Uri(logoSRC);
-            PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-            //Thread.Sleep(1000);
-            pictureBox1.ImageLocation = PuthToPicture;
-            try
-            {
-                driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-            }
-            catch (OpenQA.Selenium.ElementNotVisibleException)
-            {
-                driver.FindElement(By.Id("switch_captchas_button")).Click();
-                driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-            }
-            logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
-            logoSRC = logo.GetAttribute("src");
-            imageURL = new Uri(logoSRC);
-            PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-            //Thread.Sleep(1000);
-            pictureBox2.ImageLocation = PuthToPicture;
-            try
-            {
-                driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-            }
-            catch (OpenQA.Selenium.ElementNotVisibleException)
-            {
-                driver.FindElement(By.Id("switch_captchas_button")).Click();
-                driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-            }
 
-            driver.FindElement(By.CssSelector(".close-reveal-modal")).Click();
-            winnings += Convert.ToDouble(driver.FindElement(By.Id("winnings")).Text);
-            label1.Text = Convert.ToString(winnings);
+                    catch (System.FormatException)
+                    {
+                        try
+                        {
+                            driver.FindElement(By.CssSelector(".login_menu_button")).Click();
+                            richTextBox1.AppendText("Вход...");
+                            driver.FindElement(By.Id("login_form_btc_address")).SendKeys("blooddecember@gmail.com");
+                            driver.FindElement(By.Id("login_form_password")).SendKeys("Problem.net87");
+                            driver.FindElement(By.Id("login_button")).Click();
+                            richTextBox1.AppendText("Залогинились!");
+                        }
+                        catch (OpenQA.Selenium.NoSuchElementException)
+                        {
+                            richTextBox1.AppendText("Вход не требуется.");
+                        }
+
+                        driver.FindElement(By.Id("switch_captchas_button")).Click();
+                        IWebElement logo = driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/div[1]/img"));
+                        String logoSRC = logo.GetAttribute("src");
+                        Uri imageURL = new Uri(logoSRC);
+                        PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                        //Thread.Sleep(1000);
+                        pictureBox1.ImageLocation = PuthToPicture;
+                        try
+                        {
+                            driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                        }
+                        catch (OpenQA.Selenium.ElementNotVisibleException)
+                        {
+                            driver.FindElement(By.Id("switch_captchas_button")).Click();
+                            driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                        }
+                        logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
+                        logoSRC = logo.GetAttribute("src");
+                        imageURL = new Uri(logoSRC);
+                        PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                        //Thread.Sleep(1000);
+                        pictureBox2.ImageLocation = PuthToPicture;
+                        try
+                        {
+                            driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                        }
+                        catch (OpenQA.Selenium.ElementNotVisibleException)
+                        {
+                            driver.FindElement(By.Id("switch_captchas_button")).Click();
+                            driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                        }
+
+                        driver.FindElement(By.Id("free_play_form_button")).Click();
+
+                        Thread.Sleep(5000);
+                        driver.FindElement(By.CssSelector(".close-reveal-modal")).Click();
+                        winnings += Convert.ToDouble(driver.FindElement(By.Id("winnings")).Text);
+                        label1.Text = Convert.ToString(winnings);
+                        driver.Quit();
+                        break;
+                    }
+            }
+        }
+
+        public Form1()
+        {
+            InitializeComponent();
+            Rucaptcha.Key = "50e9fba39de714daa84c59e34ad638b2";
+            
+        }
+
+        private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e)
+        {
+            richTextBox1.AppendText(listBox1.SelectedItem.ToString() + "\n");
+            richTextBox1.AppendText(listBox1.SelectedIndex.ToString() + "\n");
+        }
+
+        private void Go_Click(object sender, EventArgs e)
+        {
+            if (Go.Text == "Паихали!")
+            {
+                timer1.Start();
+                Go.Text = "Стапэ!";
+            }
+            else
+            {
+                timer1.Stop();
+                Go.Text = "Паихали!";
+                Time = 3600;
+            }
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
-            //Записываем в настройки персональный Rucaptcha key
             
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            /*
-             * Скачиваем картинку по ссылке
-             * и сохраняем ее в папку \captcha_images\
-             * которая появится возле исполняемого файла (.exe)
-             * и записываем в переменную PuthToPicture 
-             * путь к картинке (капче), которую скачали
-             */
-            PuthToPicture = Rucaptcha.Download_Captcha("https://captchas.freebitco.in/cgi-bin/captcha_generator?client=freebitcoin&random=OsGPzk6irqVe4YX3xMxw8ivvtrYVsGC8");
-            /*
-             * Если переменная PuthToPicture пустая
-             * значит скачивание не произошло из-за
-             * отсутствия интернет-соединения
-             * либо из-за битой ссылки (URL)
-             * 
-             * Если же переменная не пустая - отображаем 
-             * в pictureBox1 скачавшуюся капчу
-             */
-            if (PuthToPicture != "")
-                pictureBox1.ImageLocation = PuthToPicture;
+
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            /*
-             * Отправляем скачавшуюся ранее картинку на разгадывание
-             * Если ответ будет содержать слово ERROR, значит возникла 
-             * определенная ошибка, которая будет описана в ответе после слова ERROR            
-             * 
-             * В ином же случае, если слова ERROR в ответе не будет, значит сервис 
-             * вернет текст отправленной капчи 
-             */
-            MessageBox.Show(Rucaptcha.Recognize(PuthToPicture));
-            /* Ответ от функци, вероятно, придётся ждать определенное время
-             * Во-первых, мы ждем наличия свободного работника 
-             * бывает что все заняты, бывает что все свободны — всегда по разному
-             * И во-вторых, ждем, пока работник разгадает капчу 
-             * 
-             * И да, при использовании этой функции в определённых программах  рекомендую ее вешать 
-             * на отдельный поток, чтобы при этом не зависала основная форма программы
-             */
+            
         }
 
-        private void button4_Click(object sender, EventArgs e)
+        private void timer1_Tick(object sender, EventArgs e)
         {
-            openFileDialog1.ShowDialog();
-            PuthToPicture = openFileDialog1.FileName;
-            if (PuthToPicture != "")
-                pictureBox1.ImageLocation = PuthToPicture;
+            if (Time >= 0)
+            {
+                Time -= 1;
+                label2.Text = Convert.ToString(Time);
+            }
+            else
+            {
+                Step();
+            }
         }
     }
 }
