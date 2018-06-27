@@ -31,7 +31,14 @@ namespace Fuset
 
         public bool IsElementVisible(IWebElement element)
         {
+            try
+            {
                 return element.Displayed && element.Enabled;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public void Step()
@@ -42,110 +49,126 @@ namespace Fuset
             //options.AddArgument("--no-sandbox");
             //options.AddArgument("--ignore-certificate-errors");
             options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
-            options.AddArguments("--start-maximized");
+            //options.AddArguments("--start-maximized");
             IWebDriver driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
             driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
-            switch (listBox1.SelectedIndex)
+
+            driver.Navigate().GoToUrl("https://freebitco.in/");
+
+
+            //Блок авторизации
+            try
             {
-                case 0:
-                    driver.Navigate().GoToUrl("https://freebitco.in/");
-
-
-                    //Ищем на форме таймер кулдауна.
-                    try
-                    {
-                        Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60;
-                        label2.Text = Convert.ToString(Time);
-                        driver.Quit();
-                        break;
-                    }
-
-                    //Если не находим пытаемся залогинится
-                    catch (Exception)
-                    {
-                        try
-                        {
-                            driver.FindElement(By.CssSelector(".login_menu_button")).Click();
-                            richTextBox1.AppendText("Вход...");
-                            driver.FindElement(By.Id("login_form_btc_address")).SendKeys("blooddecember@gmail.com");
-                            driver.FindElement(By.Id("login_form_password")).SendKeys("Problem.net87");
-                            driver.FindElement(By.Id("login_button")).Click();
-                            richTextBox1.AppendText("Залогинились!");
-                        }
-                        catch (OpenQA.Selenium.NoSuchElementException)
-                        {
-                            richTextBox1.AppendText("Вход не требуется.");
-                        }
-
-
-                        //Переключаемся на текстовые капчи, ищем и сохраняем первую капчу
-                        try
-                        {
-                            driver.FindElement(By.Id("switch_captchas_button")).Click();
-                            logo = driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/div[1]/img"));
-                            logoSRC = logo.GetAttribute("src");
-                            imageURL = new Uri(logoSRC);
-                            PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                        }
-                        catch (NoSuchElementException)
-                        {
-                            driver.FindElement(By.Id("free_play_form_button")).Click();
-                            driver.Quit();
-                            break;
-                        }
-                        //Пытаемся найти поле для ввода первой капчи, разгадываем и заполняем поле первой капчи
-                        try
-                        {
-                            driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                        }
-
-                        //Если не находит поле для ввода капчи нажимаем на переключатель капч, ищем и заполняем еще раз
-                        catch (OpenQA.Selenium.ElementNotVisibleException)
-                        {
-                            driver.FindElement(By.Id("switch_captchas_button")).Click();
-                            driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                        }
-
-                        //Ищем и согхроняем вторую капчу
-                        logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
-                        logoSRC = logo.GetAttribute("src");
-                        imageURL = new Uri(logoSRC);
-                        PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-
-                        //Разгадываем и заполняем вторую капчу
-                        try
-                        {
-                            driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                        }
-                        catch (OpenQA.Selenium.ElementNotVisibleException)
-                        {
-                            driver.FindElement(By.Id("switch_captchas_button")).Click();
-                            driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                        }
-
-                        //Нажимаем кнопку сбора
-                        driver.FindElement(By.Id("free_play_form_button")).Click();
-                        
-                        //Ищем ошибку сбора
-                        try
-                        {
-                            Console.WriteLine(Convert.ToString(driver.FindElement(By.Id("free_play_error")).Text));
-                        }
-
-                        //Если не находим
-                        catch(System.FormatException)
-                        {
-                            //driver.FindElement(By.CssSelector(".close-reveal-modal")).Click();
-                            //IWebElement Sat = driver.FindElement(By.Id("winnings"));
-                            //richTextBox1.AppendText(Convert.ToString(Sat.Text) + "\n");
-                            driver.Quit();
-                            break;
-                        }
-                        driver.Quit();
-                        break;
-                    }
+                driver.FindElement(By.CssSelector(".login_menu_button")).Click();
+                richTextBox1.AppendText("Вход...");
+                driver.FindElement(By.Id("login_form_btc_address")).SendKeys("blooddecember@gmail.com");
+                driver.FindElement(By.Id("login_form_password")).SendKeys("Problem.net87");
+                driver.FindElement(By.Id("login_button")).Click();
+                driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"));
+                if (IsElementVisible(driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"))))
+                {
+                    richTextBox1.AppendText("Много попыток входа, кулдаун 5 минут\n");
+                    Time = 300;
+                    driver.Quit();
+                    label2.Text = Convert.ToString(Time);
+                }
+                else
+                {
+                    richTextBox1.AppendText("Залогинились!\n");
+                }
             }
+            catch (OpenQA.Selenium.NoSuchElementException)
+            {
+                richTextBox1.AppendText("Вход не требуется.\n");
+            }
+
+
+            //Определение кулдауна сбора
+            if (IsElementVisible(driver.FindElement(By.CssSelector(".countdown_amount"))))             //
+            {
+                Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 60;
+                label2.Text = Convert.ToString(Time);
+                richTextBox1.AppendText("Кулдаун сбора " + Time + " секунд\n");
+                //driver.Quit();
+            }
+
+
+            //Переключение на текстовые капчи, поиск, разгадывание первой текстовой капчи
+            try
+            {
+                driver.FindElement(By.Id("switch_captchas_button")).Click();
+                logo = driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/div[1]/img"));
+                logoSRC = logo.GetAttribute("src");
+                imageURL = new Uri(logoSRC);
+                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                if (IsElementVisible(driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]"))))
+                {
+                    driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                }
+                else
+                {
+                    driver.FindElement(By.Id("switch_captchas_button")).Click();
+                    driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                }
+            }
+            catch (Exception)
+            {
+                richTextBox1.AppendText("Первая капча не найдена\n");
+                //driver.FindElement(By.Id("free_play_form_button")).Click();
+                //driver.Quit();
+            }
+
+
+            //Вторая капча
+            try
+            {
+                logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
+                logoSRC = logo.GetAttribute("src");
+                imageURL = new Uri(logoSRC);
+                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                if (IsElementVisible(driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]"))))
+                {
+                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                }
+                else
+                {
+                    driver.FindElement(By.Id("switch_captchas_button")).Click();
+                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                }
+            }
+            catch (Exception)
+            {
+                richTextBox1.AppendText("Вторая капча не найдена\n");
+                try
+                {
+                    Actions actions = new Actions(driver);
+
+                    actions.MoveToElement(driver.FindElement(By.Id("free_play_form_button"))).Click().Perform();
+
+                    driver.FindElement(By.Id("free_play_form_button")).Click();
+
+                    Time = 3660;
+
+                }
+                catch (Exception)
+                {
+                    richTextBox1.AppendText("Кнопка сбора не найдена\n");
+
+                }
+            }
+
+
+            //Ищем ошибку
+            if (IsElementVisible(driver.FindElement(By.Id("free_play_error"))))
+            {
+                string error = driver.FindElement(By.Id("free_play_error")).Text;
+                richTextBox1.AppendText(error + "\n");
+            }
+            driver.Quit();
+
+            timer1.Start();
+            Go.Text = "Стапэ!";
         }
 
         public Form1()
@@ -157,8 +180,8 @@ namespace Fuset
 
         private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e)
         {
-            richTextBox1.AppendText(listBox1.SelectedItem.ToString() + "\n");
-            richTextBox1.AppendText(listBox1.SelectedIndex.ToString() + "\n");
+            //richTextBox1.AppendText(listBox1.SelectedItem.ToString() + "\n");
+            //richTextBox1.AppendText(listBox1.SelectedIndex.ToString() + "\n");
         }
 
         private void Go_Click(object sender, EventArgs e)
@@ -248,7 +271,7 @@ namespace Fuset
             //options.AddArguments("--start-maximized");
             IWebDriver driver = new ChromeDriver(options);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(2);
+            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
 
             driver.Navigate().GoToUrl("https://freebitco.in/");
 
@@ -286,7 +309,7 @@ namespace Fuset
                 Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60;
                 label2.Text = Convert.ToString(Time);
                 richTextBox1.AppendText("Кулдаун сбора " + Time + " секунд\n");
-                driver.Quit();
+                //driver.Quit();
             }
 
 
@@ -308,10 +331,11 @@ namespace Fuset
                     driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
                 }
             }
-            catch (NoSuchElementException)
+            catch (Exception)
             {
-                driver.FindElement(By.Id("free_play_form_button")).Click();
-                driver.Quit();
+                richTextBox1.AppendText("Первая капча не найдена\n");
+                //driver.FindElement(By.Id("free_play_form_button")).Click();
+                //driver.Quit();
             }
 
 
@@ -322,8 +346,43 @@ namespace Fuset
                 logoSRC = logo.GetAttribute("src");
                 imageURL = new Uri(logoSRC);
                 PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                if (IsElementVisible(driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]"))))
+                {
+                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                }
+                else
+                {
+                    driver.FindElement(By.Id("switch_captchas_button")).Click();
+                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                }
+            }
+            catch (Exception)
+            {
+                richTextBox1.AppendText("Вторая капча не найдена\n");
+                try
+                {
+                    driver.FindElement(By.Id("free_play_form_button")).Click();
+                    Time = 3600;
+                    
+                }
+                catch (Exception)
+                {
+                    richTextBox1.AppendText("Кнопка сбора не найдена\n");
+                    
+                }
             }
 
+
+            //Ищем ошибку
+            if (IsElementVisible(driver.FindElement(By.Id("free_play_error"))))
+            {
+                string error = driver.FindElement(By.Id("free_play_error")).Text;
+                richTextBox1.AppendText(error + "\n");
+            }
+            driver.Quit();
+
+            timer1.Start();
+            Go.Text = "Стапэ!";
         }
 
         private void timer1_Tick(object sender, EventArgs e)
