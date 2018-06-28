@@ -27,7 +27,12 @@ namespace Fuset
         Uri imageURL;
         IWebDriver driver;
         ChromeOptions options;
-        
+        SynchronizationContext _syncContext = SynchronizationContext.Current;
+
+        public void UpdateLog(string s)
+        {
+            richTextBox1.AppendText(s + "\n");
+        }
 
         public bool IsElementVisible(IWebElement element)
         {
@@ -41,134 +46,142 @@ namespace Fuset
             }
         }
 
-        public void Step()
+        public async void Step()
         {
-            ChromeOptions options = new ChromeOptions();
-            //options.AddArgument("--headless");
-            //options.AddArgument("--disable-gpu");
-            //options.AddArgument("--no-sandbox");
-            //options.AddArgument("--ignore-certificate-errors");
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
-            //options.AddArguments("--start-maximized");
-            IWebDriver driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
-
-            driver.Navigate().GoToUrl("https://freebitco.in/");
-
-
-            //Блок авторизации
-            try
+            timer1.Stop();
+            await Task.Run(() =>
             {
-                driver.FindElement(By.CssSelector(".login_menu_button")).Click();
-                richTextBox1.AppendText("Вход...");
-                driver.FindElement(By.Id("login_form_btc_address")).SendKeys("blooddecember@gmail.com");
-                driver.FindElement(By.Id("login_form_password")).SendKeys("Problem.net87");
-                driver.FindElement(By.Id("login_button")).Click();
-                driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"));
-                if (IsElementVisible(driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"))))
-                {
-                    richTextBox1.AppendText("Много попыток входа, кулдаун 5 минут\n");
-                    Time = 300;
-                    driver.Quit();
-                    label2.Text = Convert.ToString(Time);
-                }
-                else
-                {
-                    richTextBox1.AppendText("Залогинились!\n");
-                }
-            }
-            catch (OpenQA.Selenium.NoSuchElementException)
-            {
-                richTextBox1.AppendText("Вход не требуется.\n");
-            }
+                options.AddArgument("--headless");
+                //options.AddArgument("--disable-gpu");
+                //options.AddArgument("--no-sandbox");
+                //options.AddArgument("--ignore-certificate-errors");
+                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
+                //options.AddArguments("--start-maximized");
+                IWebDriver driver = new ChromeDriver(options);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
+
+                driver.Navigate().GoToUrl("https://freebitco.in/");
 
 
-            //Определение кулдауна сбора
-            if (IsElementVisible(driver.FindElement(By.CssSelector(".countdown_amount"))))             //
-            {
-                Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 60;
-                label2.Text = Convert.ToString(Time);
-                richTextBox1.AppendText("Кулдаун сбора " + Time + " секунд\n");
-                //driver.Quit();
-            }
-
-
-            //Переключение на текстовые капчи, поиск, разгадывание первой текстовой капчи
-            try
-            {
-                driver.FindElement(By.Id("switch_captchas_button")).Click();
-                logo = driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/div[1]/img"));
-                logoSRC = logo.GetAttribute("src");
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                if (IsElementVisible(driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]"))))
-                {
-                    driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                }
-                else
-                {
-                    driver.FindElement(By.Id("switch_captchas_button")).Click();
-                    driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                }
-            }
-            catch (Exception)
-            {
-                richTextBox1.AppendText("Первая капча не найдена\n");
-                //driver.FindElement(By.Id("free_play_form_button")).Click();
-                //driver.Quit();
-            }
-
-
-            //Вторая капча
-            try
-            {
-                logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
-                logoSRC = logo.GetAttribute("src");
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                if (IsElementVisible(driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]"))))
-                {
-                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                }
-                else
-                {
-                    driver.FindElement(By.Id("switch_captchas_button")).Click();
-                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                }
-            }
-            catch (Exception)
-            {
-                richTextBox1.AppendText("Вторая капча не найдена\n");
+                //Блок авторизации
                 try
                 {
-                    Actions actions = new Actions(driver);
+                    driver.FindElement(By.CssSelector(".login_menu_button")).Click();
+                    //richTextBox1.AppendText("Вход...");
+                    driver.FindElement(By.Id("login_form_btc_address")).SendKeys("blooddecember@gmail.com");
+                    driver.FindElement(By.Id("login_form_password")).SendKeys("Problem.net87");
+                    driver.FindElement(By.Id("login_button")).Click();
+                    driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"));
+                    if (IsElementVisible(driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"))))
+                    {
+                        //richTextBox1.AppendText("Много попыток входа, кулдаун 5 минут\n");
+                        Time = 300;
+                        driver.Quit();
+                        label2.Text = Convert.ToString(Time);
+                    }
+                    else
+                    {
+                        //richTextBox1.AppendText("Залогинились!\n");
+                    }
+                }
+                catch (OpenQA.Selenium.NoSuchElementException)
+                {
+                    //richTextBox1.AppendText("Вход не требуется.\n");
+                    UpdateLog("Вход не требуется");
+                }
 
-                    actions.MoveToElement(driver.FindElement(By.Id("free_play_form_button"))).Click().Perform();
 
-                    driver.FindElement(By.Id("free_play_form_button")).Click();
+                //Определение кулдауна сбора
+                if (IsElementVisible(driver.FindElement(By.CssSelector(".countdown_amount"))))             //
+                {
+                    Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 60;
+                    label2.Text = Convert.ToString(Time);
+                    //richTextBox1.AppendText("Кулдаун сбора " + Time + " секунд\n");
+                    UpdateLog("Кулдаун сбора " + Time + " секунд");
+                    //driver.Quit();
+                }
 
-                    Time = 3660;
 
+                //Переключение на текстовые капчи, поиск, разгадывание первой текстовой капчи
+                try
+                {
+                    driver.FindElement(By.Id("switch_captchas_button")).Click();
+                    logo = driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/div[1]/img"));
+                    logoSRC = logo.GetAttribute("src");
+                    imageURL = new Uri(logoSRC);
+                    PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                    if (IsElementVisible(driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]"))))
+                    {
+                        driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                    }
+                    else
+                    {
+                        driver.FindElement(By.Id("switch_captchas_button")).Click();
+                        driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                    }
                 }
                 catch (Exception)
                 {
-                    richTextBox1.AppendText("Кнопка сбора не найдена\n");
-
+                    //richTextBox1.AppendText("Первая капча не найдена\n");
+                    UpdateLog("Первая капча не найдена");
+                    //driver.FindElement(By.Id("free_play_form_button")).Click();
+                    //driver.Quit();
                 }
-            }
 
 
-            //Ищем ошибку
-            if (IsElementVisible(driver.FindElement(By.Id("free_play_error"))))
-            {
-                string error = driver.FindElement(By.Id("free_play_error")).Text;
-                richTextBox1.AppendText(error + "\n");
-            }
-            driver.Quit();
+                //Вторая капча
+                try
+                {
+                    logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
+                    logoSRC = logo.GetAttribute("src");
+                    imageURL = new Uri(logoSRC);
+                    PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                    if (IsElementVisible(driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]"))))
+                    {
+                        driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                    }
+                    else
+                    {
+                        driver.FindElement(By.Id("switch_captchas_button")).Click();
+                        driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                    }
+                }
+                catch (Exception)
+                {
+                    //richTextBox1.AppendText("Вторая капча не найдена\n");
+                    UpdateLog("Вторая капча не найдена");
+                    try
+                    {
+                        IJavaScriptExecutor js = driver as IJavaScriptExecutor;
+                        js.ExecuteScript("window.scrollBy(0,950);");
 
-            timer1.Start();
-            Go.Text = "Стапэ!";
+                        driver.FindElement(By.Id("free_play_form_button")).Click();
+
+                        Time = 3660;
+
+                    }
+                    catch (Exception)
+                    {
+                        //richTextBox1.AppendText("Кнопка сбора не найдена\n");
+                        UpdateLog("Кнопка сбора не найдена");
+
+                    }
+                }
+
+
+                //Ищем ошибку
+                if (IsElementVisible(driver.FindElement(By.Id("free_play_error"))))
+                {
+                    string error = driver.FindElement(By.Id("free_play_error")).Text;
+                    //richTextBox1.AppendText(error + "\n");
+                    UpdateLog(error);
+                }
+                driver.Quit();
+
+                timer1.Start();
+                Go.Text = "Стапэ!";
+            });
         }
 
         public Form1()
@@ -204,59 +217,36 @@ namespace Fuset
             
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private async void button2_Click(object sender, EventArgs e)
         {
-            options = new ChromeOptions();
-            //options.AddArgument("--headless");
-            //options.AddArgument("--disable-gpu");
-            //options.AddArgument("--no-sandbox");
-            //options.AddArgument("--ignore-certificate-errors");
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
-            options.AddArguments("--start-maximized");
-            driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
+            
 
-            driver.Navigate().GoToUrl("https://freebitco.in/");
-
-            //Логинимся
-            try
+            await Task.Run(() =>
             {
-                driver.FindElement(By.CssSelector(".login_menu_button")).Click();
-                richTextBox1.AppendText("Вход...");
-                driver.FindElement(By.Id("login_form_btc_address")).SendKeys("blooddecember@gmail.com");
-                driver.FindElement(By.Id("login_form_password")).SendKeys("Problem.net87");
-                driver.FindElement(By.Id("login_button")).Click();
-                richTextBox1.AppendText("Залогинились!\n");
-            }
-            catch (OpenQA.Selenium.NoSuchElementException)
-            {
-                richTextBox1.AppendText("Вход не требуется.\n");
-            }
+                options = new ChromeOptions();
+                options.AddArgument("--headless");
+                //options.AddArgument("--disable-gpu");
+                //options.AddArgument("--no-sandbox");
+                //options.AddArgument("--ignore-certificate-errors");
+                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
+                options.AddArguments("--start-maximized");
+                driver = new ChromeDriver(options);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
+                driver.Navigate().GoToUrl("https://freebitco.in/");
 
-
-            if (IsElementVisible(driver.FindElement(By.CssSelector(".countdown_amount"))))             //
-            {
-                Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60;
-                label2.Text = Convert.ToString(Time);
-                driver.Quit();
-            }
-
-            if (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))))
-            {
-                driver.FindElement(By.Id("switch_captchas_button")).Click();
-                logo = driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/div[1]/img"));
-                logoSRC = logo.GetAttribute("src");
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-
-                if (driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")) != null)
+                Action action = () =>
                 {
-                    driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                    richTextBox1.AppendText("Текст" + "\n");
+                };
 
-                }
+                Invoke(action);
 
-            }
+            });
+
+            
+
+            
 
         }
 
