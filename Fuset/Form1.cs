@@ -20,7 +20,10 @@ namespace Fuset
     public partial class Form1 : Form
     {
         string PuthToPicture; //Переменная для хранения пути к картинке капчи на компьютере
-        double winnings = 0;
+        int old_RP = 0; 
+        int old_BTC = 0;
+        int spred_BTC = 0;
+        int spred_RP = 0;
         int Time = 0;
         IWebElement logo;
         String logoSRC;
@@ -31,7 +34,12 @@ namespace Fuset
 
         public void UpdateLog(string s)
         {
-            richTextBox1.AppendText(s + "\n");
+            Action action = () =>
+            {
+                richTextBox1.AppendText(s + "\n");
+            };
+
+            Invoke(action);
         }
 
         public bool IsElementVisible(IWebElement element)
@@ -46,12 +54,28 @@ namespace Fuset
             }
         }
 
+        public void calculete(string BTC, string RP)
+        {
+
+            Action action = () =>
+            {
+                spred_BTC += Convert.ToInt32(BTC.Replace(".", "")) - old_BTC;
+                label1.Text = Convert.ToString(spred_BTC);
+
+                spred_RP += Convert.ToInt32(RP.Replace(".", "")) - old_RP;
+                label3.Text = Convert.ToString(spred_RP);
+            };
+
+            Invoke(action);
+        }
+
         public async void Step()
         {
             timer1.Stop();
             await Task.Run(() =>
             {
-                options.AddArgument("--headless");
+                options = new ChromeOptions();
+                //options.AddArgument("--headless");
                 //options.AddArgument("--disable-gpu");
                 //options.AddArgument("--no-sandbox");
                 //options.AddArgument("--ignore-certificate-errors");
@@ -59,7 +83,7 @@ namespace Fuset
                 //options.AddArguments("--start-maximized");
                 IWebDriver driver = new ChromeDriver(options);
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
+                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
 
                 driver.Navigate().GoToUrl("https://freebitco.in/");
 
@@ -68,38 +92,44 @@ namespace Fuset
                 try
                 {
                     driver.FindElement(By.CssSelector(".login_menu_button")).Click();
-                    //richTextBox1.AppendText("Вход...");
+                    UpdateLog("Вход...");
                     driver.FindElement(By.Id("login_form_btc_address")).SendKeys("blooddecember@gmail.com");
                     driver.FindElement(By.Id("login_form_password")).SendKeys("Problem.net87");
                     driver.FindElement(By.Id("login_button")).Click();
                     driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"));
                     if (IsElementVisible(driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"))))
                     {
-                        //richTextBox1.AppendText("Много попыток входа, кулдаун 5 минут\n");
+                        UpdateLog("Много попыток входа, кулдаун 5 минут\n");
                         Time = 300;
                         driver.Quit();
                         label2.Text = Convert.ToString(Time);
                     }
                     else
                     {
-                        //richTextBox1.AppendText("Залогинились!\n");
+                        UpdateLog("Залогинились!\n");
                     }
                 }
                 catch (OpenQA.Selenium.NoSuchElementException)
                 {
-                    //richTextBox1.AppendText("Вход не требуется.\n");
                     UpdateLog("Вход не требуется");
                 }
 
 
-                //Определение кулдауна сбора
+//Записываем баланс до попытки сбора
+                old_BTC = Convert.ToInt32(driver.FindElement(By.Id("balance")).Text.Replace(".", ""));
+
+                driver.FindElement(By.CssSelector(".rewards_link")).Click();
+                old_RP = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text.Replace(",", ""));
+
+                driver.Navigate().Refresh();
+
+
+//Определение кулдауна сбора
                 if (IsElementVisible(driver.FindElement(By.CssSelector(".countdown_amount"))))             //
                 {
                     Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 60;
-                    label2.Text = Convert.ToString(Time);
-                    //richTextBox1.AppendText("Кулдаун сбора " + Time + " секунд\n");
+                    
                     UpdateLog("Кулдаун сбора " + Time + " секунд");
-                    //driver.Quit();
                 }
 
 
@@ -123,10 +153,7 @@ namespace Fuset
                 }
                 catch (Exception)
                 {
-                    //richTextBox1.AppendText("Первая капча не найдена\n");
                     UpdateLog("Первая капча не найдена");
-                    //driver.FindElement(By.Id("free_play_form_button")).Click();
-                    //driver.Quit();
                 }
 
 
@@ -149,7 +176,6 @@ namespace Fuset
                 }
                 catch (Exception)
                 {
-                    //richTextBox1.AppendText("Вторая капча не найдена\n");
                     UpdateLog("Вторая капча не найдена");
                     try
                     {
@@ -163,7 +189,6 @@ namespace Fuset
                     }
                     catch (Exception)
                     {
-                        //richTextBox1.AppendText("Кнопка сбора не найдена\n");
                         UpdateLog("Кнопка сбора не найдена");
 
                     }
@@ -174,14 +199,27 @@ namespace Fuset
                 if (IsElementVisible(driver.FindElement(By.Id("free_play_error"))))
                 {
                     string error = driver.FindElement(By.Id("free_play_error")).Text;
-                    //richTextBox1.AppendText(error + "\n");
                     UpdateLog(error);
                 }
+
+                driver.Navigate().Refresh();
+
+                driver.FindElement(By.CssSelector(".rewards_link")).Click();
+                calculete(driver.FindElement(By.Id("balance")).Text , driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text);
+
                 driver.Quit();
 
-                timer1.Start();
-                Go.Text = "Стапэ!";
+
             });
+
+            
+
+            
+            label2.Text = Convert.ToString(Time);
+            label3.Text = Convert.ToString(old_RP);
+
+            timer1.Start();
+            Go.Text = "Стапэ!";
         }
 
         public Form1()
@@ -219,12 +257,12 @@ namespace Fuset
 
         private async void button2_Click(object sender, EventArgs e)
         {
-            
+            richTextBox1.Clear();
 
             await Task.Run(() =>
             {
                 options = new ChromeOptions();
-                options.AddArgument("--headless");
+                //options.AddArgument("--headless");
                 //options.AddArgument("--disable-gpu");
                 //options.AddArgument("--no-sandbox");
                 //options.AddArgument("--ignore-certificate-errors");
@@ -235,18 +273,14 @@ namespace Fuset
                 driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
                 driver.Navigate().GoToUrl("https://freebitco.in/");
 
-                Action action = () =>
-                {
-                    richTextBox1.AppendText("Текст" + "\n");
-                };
+                driver.FindElement(By.CssSelector(".rewards_link")).Click();
+                old_RP = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text.Replace(",", ""));
 
-                Invoke(action);
-
+                
             });
 
-            
+            label3.Text = Convert.ToString(old_RP);
 
-            
 
         }
 
