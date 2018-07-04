@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SQLite;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -30,7 +32,52 @@ namespace Fuset
         Uri imageURL;
         IWebDriver driver;
         ChromeOptions options;
-        SynchronizationContext _syncContext = SynchronizationContext.Current;
+
+        private String dbFileName = "sample.sqlite";
+        private SQLiteConnection m_dbConn;
+        private SQLiteCommand m_sqlCmd;
+
+        public void DataUpdate(int RP, int BTC)
+        {
+            try
+            {
+                m_sqlCmd.CommandText = "INSERT INTO Catalog ('Время', 'RP', 'BTC') values ('" + DateTime.Now + "' , '" + RP + "' , '" + BTC + "')";
+
+                m_sqlCmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
+        }
+
+        public void DataGridUpdate()
+        {
+            DataTable dTable = new DataTable();
+            String sqlQuery;
+
+
+            try
+            {
+                sqlQuery = "SELECT * FROM Catalog";
+                SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, m_dbConn);
+                adapter.Fill(dTable);
+
+                if (dTable.Rows.Count > 0)
+                {
+                    dataGridView1.Rows.Clear();
+
+                    for (int i = 0; i < dTable.Rows.Count; i++)
+                        dataGridView1.Rows.Add(dTable.Rows[i].ItemArray);
+                }
+                else
+                    MessageBox.Show("Database is empty");
+            }
+            catch (SQLiteException ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
+        }
 
         public void UpdateLog(string s)
         {
@@ -59,12 +106,19 @@ namespace Fuset
 
             Action action = () =>
             {
-                spred_BTC += Convert.ToInt32(BTC.Replace(".", "")) - old_BTC;
+                spred_BTC = Convert.ToInt32(BTC.Replace(".", "")) - old_BTC;
                 label1.Text = Convert.ToString(spred_BTC);
 
-                spred_RP += Convert.ToInt32(RP.Replace(".", "")) - old_RP;
+                spred_RP = Convert.ToInt32(RP.Replace(",", "")) - old_RP;
                 label3.Text = Convert.ToString(spred_RP);
+
+                if (spred_BTC != 0)
+                {
+                    DataUpdate(spred_RP, spred_BTC);
+                    DataGridUpdate();
+                }
             };
+
 
             Invoke(action);
         }
@@ -88,7 +142,7 @@ namespace Fuset
                 driver.Navigate().GoToUrl("https://freebitco.in/");
 
 
-                //Блок авторизации
+//Блок авторизации
                 try
                 {
                     driver.FindElement(By.CssSelector(".login_menu_button")).Click();
@@ -121,6 +175,8 @@ namespace Fuset
                 driver.FindElement(By.CssSelector(".rewards_link")).Click();
                 old_RP = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text.Replace(",", ""));
 
+                UpdateLog("old_RP = " + Convert.ToString(old_RP));
+
                 driver.Navigate().Refresh();
 
 
@@ -133,7 +189,7 @@ namespace Fuset
                 }
 
 
-                //Переключение на текстовые капчи, поиск, разгадывание первой текстовой капчи
+//Переключение на текстовые капчи, поиск, разгадывание первой текстовой капчи
                 try
                 {
                     driver.FindElement(By.Id("switch_captchas_button")).Click();
@@ -157,7 +213,7 @@ namespace Fuset
                 }
 
 
-                //Вторая капча
+//Вторая капча
                 try
                 {
                     logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
@@ -195,15 +251,15 @@ namespace Fuset
                 }
 
 
-                //Ищем ошибку
+//Ищем ошибку
                 if (IsElementVisible(driver.FindElement(By.Id("free_play_error"))))
                 {
                     string error = driver.FindElement(By.Id("free_play_error")).Text;
                     UpdateLog(error);
                 }
 
+//Запись статистики
                 driver.Navigate().Refresh();
-
                 driver.FindElement(By.CssSelector(".rewards_link")).Click();
                 calculete(driver.FindElement(By.Id("balance")).Text , driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text);
 
@@ -211,12 +267,8 @@ namespace Fuset
 
 
             });
-
-            
-
             
             label2.Text = Convert.ToString(Time);
-            label3.Text = Convert.ToString(old_RP);
 
             timer1.Start();
             Go.Text = "Стапэ!";
@@ -250,11 +302,6 @@ namespace Fuset
             }
         }
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
-            
-        }
-
         private async void button2_Click(object sender, EventArgs e)
         {
             richTextBox1.Clear();
@@ -286,127 +333,7 @@ namespace Fuset
 
         private void button3_Click(object sender, EventArgs e)
         {
-            ChromeOptions options = new ChromeOptions();
-            //options.AddArgument("--headless");
-            //options.AddArgument("--disable-gpu");
-            //options.AddArgument("--no-sandbox");
-            //options.AddArgument("--ignore-certificate-errors");
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
-            //options.AddArguments("--start-maximized");
-            IWebDriver driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
-
-            driver.Navigate().GoToUrl("https://freebitco.in/");
-
-
-            //Блок авторизации
-            try
-            {
-                driver.FindElement(By.CssSelector(".login_menu_button")).Click();
-                richTextBox1.AppendText("Вход...");
-                driver.FindElement(By.Id("login_form_btc_address")).SendKeys("blooddecember@gmail.com");
-                driver.FindElement(By.Id("login_form_password")).SendKeys("Problem.net87");
-                driver.FindElement(By.Id("login_button")).Click();
-                driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"));
-                if (IsElementVisible(driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"))))
-                {
-                    richTextBox1.AppendText("Много попыток входа, кулдаун 5 минут\n");
-                    Time = 300;
-                    driver.Quit();
-                    label2.Text = Convert.ToString(Time);
-                }
-                else
-                {
-                    richTextBox1.AppendText("Залогинились!\n");
-                }
-            }
-            catch (OpenQA.Selenium.NoSuchElementException)
-            {
-                richTextBox1.AppendText("Вход не требуется.\n");
-            }
-
-
-            //Определение кулдауна сбора
-            if (IsElementVisible(driver.FindElement(By.CssSelector(".countdown_amount"))))             //
-            {
-                Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60;
-                label2.Text = Convert.ToString(Time);
-                richTextBox1.AppendText("Кулдаун сбора " + Time + " секунд\n");
-                //driver.Quit();
-            }
-
-
-            //Переключение на текстовые капчи, поиск, разгадывание первой текстовой капчи
-            try
-            {
-                driver.FindElement(By.Id("switch_captchas_button")).Click();
-                logo = driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/div[1]/img"));
-                logoSRC = logo.GetAttribute("src");
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                if (IsElementVisible(driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]"))))
-                {
-                    driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                }
-                else
-                {
-                    driver.FindElement(By.Id("switch_captchas_button")).Click();
-                    driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                }
-            }
-            catch (Exception)
-            {
-                richTextBox1.AppendText("Первая капча не найдена\n");
-                //driver.FindElement(By.Id("free_play_form_button")).Click();
-                //driver.Quit();
-            }
-
-
-            //Вторая капча
-            try
-            {
-                logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
-                logoSRC = logo.GetAttribute("src");
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                if (IsElementVisible(driver.FindElement(By.XPath("//*[@id='captchasnet_free_play_captcha']/input[2]"))))
-                {
-                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                }
-                else
-                {
-                    driver.FindElement(By.Id("switch_captchas_button")).Click();
-                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                }
-            }
-            catch (Exception)
-            {
-                richTextBox1.AppendText("Вторая капча не найдена\n");
-                try
-                {
-                    driver.FindElement(By.Id("free_play_form_button")).Click();
-                    Time = 3600;
-                    
-                }
-                catch (Exception)
-                {
-                    richTextBox1.AppendText("Кнопка сбора не найдена\n");
-                    
-                }
-            }
-
-
-            //Ищем ошибку
-            if (IsElementVisible(driver.FindElement(By.Id("free_play_error"))))
-            {
-                string error = driver.FindElement(By.Id("free_play_error")).Text;
-                richTextBox1.AppendText(error + "\n");
-            }
-            driver.Quit();
-
-            timer1.Start();
-            Go.Text = "Стапэ!";
+            DataGridUpdate();
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -425,6 +352,29 @@ namespace Fuset
         private void Form1_Load(object sender, EventArgs e)
         {
             listBox1.SetSelected(0, true);
+
+            m_dbConn = new SQLiteConnection();
+            m_sqlCmd = new SQLiteCommand();
+
+            if (!File.Exists(dbFileName))
+                SQLiteConnection.CreateFile(dbFileName);
+
+            try
+            {
+                m_dbConn = new SQLiteConnection("Data Source=" + dbFileName + ";Version=3;");
+                m_dbConn.Open();
+                m_sqlCmd.Connection = m_dbConn;
+
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Catalog (id INTEGER PRIMARY KEY AUTOINCREMENT, Время TEXT, RP INTEGER, BTC INTEGER)";
+                m_sqlCmd.ExecuteNonQuery();
+
+                
+            }
+            catch (SQLiteException ex)
+            {
+                
+                MessageBox.Show("Error: " + ex.Message);
+            }
         }
 
 
