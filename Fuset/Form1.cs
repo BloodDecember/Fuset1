@@ -195,14 +195,15 @@ namespace Fuset
                 {
                     driver.FindElement(By.CssSelector(".rewards_link")).Click();
 
+                    Thread.Sleep(1000);
                     IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                    js.ExecuteScript("window.scrollBy(0,10000);");
-                    driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]/i")).Click();
+                    js.ExecuteScript("window.scrollBy(0,950);");
+                    driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]")).Click();
 
-                    Thread.Sleep(3000);
-                    js.ExecuteScript("window.scrollBy(0,10000);");
-
+                    Thread.Sleep(1000);
+                    js.ExecuteScript("window.scrollBy(0,950);");
                     driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button")).Click();
+
                     driver.Navigate().Refresh();
                 }
 
@@ -282,6 +283,10 @@ namespace Fuset
                 //driver.FindElement(By.CssSelector(".close-reveal-modal")).Click();
                 driver.FindElement(By.CssSelector(".rewards_link")).Click();
                 driver.FindElement(By.CssSelector(".free_play_link")).Click();
+
+                Thread.Sleep(1000);
+                IJavaScriptExecutor s = driver as IJavaScriptExecutor;
+                s.ExecuteScript("window.scrollBy(0,950);");
                 calculete(driver.FindElement(By.Id("balance")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text);
 
 
@@ -351,13 +356,15 @@ namespace Fuset
                 {
 
                     driver.FindElement(By.CssSelector(".rewards_link")).Click();
-
+                    Thread.Sleep(1000);
                     IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                    js.ExecuteScript("window.scrollBy(0,10000);");
+                    js.ExecuteScript("window.scrollBy(0,950);");
                     driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]")).Click();
-                    Thread.Sleep(7000);
+                    Thread.Sleep(1000);
 
-                    js.ExecuteScript("window.scrollBy(0,10000);");
+                    js.ExecuteScript("window.scrollBy(0,950);");
+                    driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button")).Click();
+
                 }
 
 
