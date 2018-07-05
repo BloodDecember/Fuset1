@@ -109,7 +109,8 @@ namespace Fuset
                 spred_BTC = Convert.ToInt32(BTC.Replace(".", "")) - old_BTC;
                 label1.Text = Convert.ToString(spred_BTC);
 
-                spred_RP = Convert.ToInt32(RP.Replace(",", "")) - old_RP;
+                //spred_RP = Convert.ToInt32(RP.Replace(",", "")) - old_RP;
+                spred_RP = Convert.ToInt32(RP);
                 label3.Text = Convert.ToString(spred_RP);
 
                 if (spred_BTC != 0)
@@ -189,6 +190,23 @@ namespace Fuset
                 }
 
 
+//Активация бонусов
+                if (Time <= 0 && checkBox1.Checked)
+                {
+                    driver.FindElement(By.CssSelector(".rewards_link")).Click();
+
+                    IJavaScriptExecutor js = driver as IJavaScriptExecutor;
+                    js.ExecuteScript("window.scrollBy(0,10000);");
+                    driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]/i")).Click();
+
+                    Thread.Sleep(3000);
+                    js.ExecuteScript("window.scrollBy(0,10000);");
+
+                    driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button")).Click();
+                    driver.Navigate().Refresh();
+                }
+
+
 //Переключение на текстовые капчи, поиск, разгадывание первой текстовой капчи
                 try
                 {
@@ -259,10 +277,18 @@ namespace Fuset
                 }
 
 //Запись статистики
-                driver.Navigate().Refresh();
-                driver.FindElement(By.CssSelector(".rewards_link")).Click();
-                calculete(driver.FindElement(By.Id("balance")).Text , driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text);
+                Thread.Sleep(7000);
 
+                //driver.FindElement(By.CssSelector(".close-reveal-modal")).Click();
+                driver.FindElement(By.CssSelector(".rewards_link")).Click();
+                driver.FindElement(By.CssSelector(".free_play_link")).Click();
+                calculete(driver.FindElement(By.Id("balance")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text);
+
+
+                //driver.Navigate().Refresh();
+                //driver.FindElement(By.CssSelector(".rewards_link")).Click();
+                //calculete(driver.FindElement(By.Id("balance")).Text , driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text);
+                //UpdateLog("new_RP = " + Convert.ToString(driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text));
                 driver.Quit();
 
 
@@ -320,13 +346,23 @@ namespace Fuset
                 driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
                 driver.Navigate().GoToUrl("https://freebitco.in/");
 
-                driver.FindElement(By.CssSelector(".rewards_link")).Click();
-                old_RP = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text.Replace(",", ""));
 
-                
+                if (Time <= 0 && checkBox1.Checked)
+                {
+
+                    driver.FindElement(By.CssSelector(".rewards_link")).Click();
+
+                    IJavaScriptExecutor js = driver as IJavaScriptExecutor;
+                    js.ExecuteScript("window.scrollBy(0,10000);");
+                    driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]")).Click();
+                    Thread.Sleep(7000);
+
+                    js.ExecuteScript("window.scrollBy(0,10000);");
+                }
+
+
             });
-
-            label3.Text = Convert.ToString(old_RP);
+            
 
 
         }
