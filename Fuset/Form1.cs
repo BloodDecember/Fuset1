@@ -67,7 +67,7 @@ namespace Fuset
                 {
                     dataGridView1.Rows.Clear();
 
-                    for (int i = 0; i < dTable.Rows.Count; i++)
+                    for (int i = dTable.Rows.Count - 1; i >= 0; i--)
                         dataGridView1.Rows.Add(dTable.Rows[i].ItemArray);
                 }
                 else
@@ -106,12 +106,15 @@ namespace Fuset
 
             Action action = () =>
             {
-                spred_BTC = Convert.ToInt32(BTC.Replace(".", "")) - old_BTC;
-                label1.Text = Convert.ToString(spred_BTC);
-
-                //spred_RP = Convert.ToInt32(RP.Replace(",", "")) - old_RP;
-                spred_RP = Convert.ToInt32(RP);
-                label3.Text = Convert.ToString(spred_RP);
+                try
+                {
+                    spred_BTC = Convert.ToInt32(BTC.Replace(".", ""));
+                    spred_RP = Convert.ToInt32(RP);
+                }
+                catch (System.FormatException)
+                {
+                    spred_BTC = 0;
+                }
 
                 if (spred_BTC != 0)
                 {
@@ -124,9 +127,65 @@ namespace Fuset
             Invoke(action);
         }
 
+        public void stat()
+        {
+            //dataGridView2[0, 0].Value = spred_BTC;
+            //dataGridView2[1, 0].Value = old_RP;
+            //dataGridView2[2, 0].Value = old_RP;
+            //dataGridView2[3, 0].Value = old_RP;
+        }
+
+        public void bonus(IWebDriver driver)
+        {
+            if (checkBox1.Checked)
+            {
+                driver.FindElement(By.CssSelector(".rewards_link")).Click();
+
+                Thread.Sleep(1000);
+                IJavaScriptExecutor js = driver as IJavaScriptExecutor;
+                js.ExecuteScript("window.scrollBy(0,950);");
+                driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]")).Click();
+
+                Thread.Sleep(1000);
+                js.ExecuteScript("window.scrollBy(0,950);");
+                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[2]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[3]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button")).Click();
+
+                driver.Navigate().Refresh();
+            }
+
+            if (old_RP > 2800 && checkBox2.Checked)
+            {
+                driver.FindElement(By.CssSelector(".rewards_link")).Click();
+
+                Thread.Sleep(1000);
+                IJavaScriptExecutor js = driver as IJavaScriptExecutor;
+                js.ExecuteScript("window.scrollBy(0,950);");
+                driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]")).Click();
+
+                Thread.Sleep(1000);
+                js.ExecuteScript("window.scrollBy(0,700);");
+                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+
+                driver.Navigate().Refresh();
+             }
+        }
+
         public async void Step()
         {
+            richTextBox1.Clear();
             timer1.Stop();
+            DataGridUpdate();
             await Task.Run(() =>
             {
                 options = new ChromeOptions();
@@ -135,39 +194,12 @@ namespace Fuset
                 //options.AddArgument("--no-sandbox");
                 //options.AddArgument("--ignore-certificate-errors");
                 options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
-                //options.AddArguments("--start-maximized");
+                options.AddArguments("--start-maximized");
                 IWebDriver driver = new ChromeDriver(options);
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
                 driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
 
                 driver.Navigate().GoToUrl("https://freebitco.in/");
-
-
-//Блок авторизации
-                try
-                {
-                    driver.FindElement(By.CssSelector(".login_menu_button")).Click();
-                    UpdateLog("Вход...");
-                    driver.FindElement(By.Id("login_form_btc_address")).SendKeys("blooddecember@gmail.com");
-                    driver.FindElement(By.Id("login_form_password")).SendKeys("Problem.net87");
-                    driver.FindElement(By.Id("login_button")).Click();
-                    driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"));
-                    if (IsElementVisible(driver.FindElement(By.CssSelector(".reward_point_redeem_result_error"))))
-                    {
-                        UpdateLog("Много попыток входа, кулдаун 5 минут\n");
-                        Time = 300;
-                        driver.Quit();
-                        label2.Text = Convert.ToString(Time);
-                    }
-                    else
-                    {
-                        UpdateLog("Залогинились!\n");
-                    }
-                }
-                catch (OpenQA.Selenium.NoSuchElementException)
-                {
-                    UpdateLog("Вход не требуется");
-                }
 
 
 //Записываем баланс до попытки сбора
@@ -191,21 +223,8 @@ namespace Fuset
 
 
 //Активация бонусов
-                if (Time <= 0 && checkBox1.Checked)
-                {
-                    driver.FindElement(By.CssSelector(".rewards_link")).Click();
+                bonus(driver);
 
-                    Thread.Sleep(1000);
-                    IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                    js.ExecuteScript("window.scrollBy(0,950);");
-                    driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]")).Click();
-
-                    Thread.Sleep(1000);
-                    js.ExecuteScript("window.scrollBy(0,950);");
-                    driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button")).Click();
-
-                    driver.Navigate().Refresh();
-                }
 
 
 //Переключение на текстовые капчи, поиск, разгадывание первой текстовой капчи
@@ -287,9 +306,15 @@ namespace Fuset
                 Thread.Sleep(1000);
                 IJavaScriptExecutor s = driver as IJavaScriptExecutor;
                 s.ExecuteScript("window.scrollBy(0,950);");
-                calculete(driver.FindElement(By.Id("balance")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text);
 
+                try
+                {
+                    calculete(driver.FindElement(By.Id("winnings")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text);
+                }
+                catch (Exception)
+                {
 
+                }
                 //driver.Navigate().Refresh();
                 //driver.FindElement(By.CssSelector(".rewards_link")).Click();
                 //calculete(driver.FindElement(By.Id("balance")).Text , driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text);
@@ -333,72 +358,74 @@ namespace Fuset
             }
         }
 
-        private async void button2_Click(object sender, EventArgs e)
+        private void button2_Click(object sender, EventArgs e)
         {
-            richTextBox1.Clear();
+            options = new ChromeOptions();
+            //options.AddArgument("--headless");
+            //options.AddArgument("--disable-gpu");
+            //options.AddArgument("--no-sandbox");
+            //options.AddArgument("--ignore-certificate-errors");
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
+            //options.AddArguments("--start-maximized");
+            IWebDriver driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+            //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
 
-            await Task.Run(() =>
+            driver.Navigate().GoToUrl("https://freebitco.in/");
+
+            if (Time <= 0 && checkBox1.Checked)
             {
-                options = new ChromeOptions();
-                //options.AddArgument("--headless");
-                //options.AddArgument("--disable-gpu");
-                //options.AddArgument("--no-sandbox");
-                //options.AddArgument("--ignore-certificate-errors");
-                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
-                options.AddArguments("--start-maximized");
-                driver = new ChromeDriver(options);
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
-                driver.Navigate().GoToUrl("https://freebitco.in/");
+                driver.FindElement(By.CssSelector(".rewards_link")).Click();
 
+                Thread.Sleep(1000);
+                IJavaScriptExecutor js = driver as IJavaScriptExecutor;
+                js.ExecuteScript("window.scrollBy(0,950);");
+                driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]")).Click();
 
-                if (Time <= 0 && checkBox1.Checked)
-                {
+                Thread.Sleep(1000);
+                js.ExecuteScript("window.scrollBy(0,950);");
+                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[2]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[3]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button")).Click();
 
-                    driver.FindElement(By.CssSelector(".rewards_link")).Click();
-                    Thread.Sleep(1000);
-                    IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                    js.ExecuteScript("window.scrollBy(0,950);");
-                    driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]")).Click();
-                    Thread.Sleep(1000);
+                driver.Navigate().Refresh();
+            }
 
-                    js.ExecuteScript("window.scrollBy(0,950);");
-                    driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button")).Click();
+            if (Time <= 0 && checkBox2.Checked)
+            {
+                driver.FindElement(By.CssSelector(".rewards_link")).Click();
 
-                }
+                Thread.Sleep(1000);
+                IJavaScriptExecutor js = driver as IJavaScriptExecutor;
+                js.ExecuteScript("window.scrollBy(0,950);");
+                driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]")).Click();
 
+                Thread.Sleep(1000);
+                js.ExecuteScript("window.scrollBy(0,700);");
+                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[3]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[4]/div[2]/div[3]/button")).Click();
+                Thread.Sleep(1000);
+                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[5]/div[2]/div[3]/button")).Click();
 
-            });
-            
-
+                driver.Navigate().Refresh();
+            }
 
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            DataTable dTable = new DataTable();
-            String sqlQuery;
-
-            try
-            {
-                sqlQuery = "SELECT * FROM Catalog";
-                SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, m_dbConn);
-                adapter.Fill(dTable);
-
-                if (dTable.Rows.Count > 0)
-                {
-                    dataGridView1.Rows.Clear();
-
-                    for (int i = dTable.Rows.Count - 1; i >= 0; i--)
-                        dataGridView1.Rows.Add(dTable.Rows[i].ItemArray);
-                }
-                else
-                    MessageBox.Show("Database is empty");
-            }
-            catch (SQLiteException ex)
-            {
-                MessageBox.Show("Error: " + ex.Message);
-            }
+            UpdateLog("текс");
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -442,6 +469,21 @@ namespace Fuset
             }
         }
 
+        private void button1_Click(object sender, EventArgs e)
+        {
+            options = new ChromeOptions();
+            //options.AddArgument("--headless");
+            //options.AddArgument("--disable-gpu");
+            //options.AddArgument("--no-sandbox");
+            //options.AddArgument("--ignore-certificate-errors");
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
+            options.AddArguments("--start-maximized");
+            driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
+            driver.Navigate().GoToUrl("https://freebitco.in/");
 
+            //driver.FindElement(By.CssSelector(".login_menu_button")).Click();
+        }
     }
 }
