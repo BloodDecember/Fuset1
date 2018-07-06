@@ -376,7 +376,29 @@ namespace Fuset
 
         private void button3_Click(object sender, EventArgs e)
         {
-            DataGridUpdate();
+            DataTable dTable = new DataTable();
+            String sqlQuery;
+
+            try
+            {
+                sqlQuery = "SELECT * FROM Catalog";
+                SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, m_dbConn);
+                adapter.Fill(dTable);
+
+                if (dTable.Rows.Count > 0)
+                {
+                    dataGridView1.Rows.Clear();
+
+                    for (int i = dTable.Rows.Count - 1; i >= 0; i--)
+                        dataGridView1.Rows.Add(dTable.Rows[i].ItemArray);
+                }
+                else
+                    MessageBox.Show("Database is empty");
+            }
+            catch (SQLiteException ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
         }
 
         private void timer1_Tick(object sender, EventArgs e)
