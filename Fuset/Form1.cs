@@ -6,6 +6,7 @@ using System.Data.SQLite;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,6 +37,49 @@ namespace Fuset
         private String dbFileName = "sample.sqlite";
         private SQLiteConnection m_dbConn;
         private SQLiteCommand m_sqlCmd;
+
+        public string SendRecaptchav2Request()
+        {
+            //POST
+            try
+            {
+                ServicePointManager.Expect100Continue = false;
+                var request = (HttpWebRequest)WebRequest.Create("http://2captcha.com/in.php");
+
+                var postData = "http://2captcha.com/in.php?key=50e9fba39de714daa84c59e34ad638b2&method=userrecaptcha&googlekey=6LeGfGIUAAAAAEyUovGUehv82L-IdNRusaYFEm5b&pageurl=https://freebitco.in/?op=home";
+                var data = Encoding.ASCII.GetBytes(postData);
+
+                request.Method = "POST";
+
+                request.ContentType = "application/x-www-form-urlencoded";
+                request.ContentLength = data.Length;
+
+                using (var stream = request.GetRequestStream())
+                {
+                    stream.Write(data, 0, data.Length);
+                }
+
+                var response = (HttpWebResponse)request.GetResponse();
+
+                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+
+                //  GET
+                if (responseString.Contains("OK|"))
+                {
+                    return responseString.Substring(0, 3);
+                }
+                else
+                {
+                    return "Error";
+                }
+            }
+            catch (Exception e)
+            {
+                string tt = e.Message;
+                return tt;
+            }
+
+        }
 
         public void DataUpdate(int RP, int BTC)
         {
@@ -142,18 +186,19 @@ namespace Fuset
                 driver.FindElement(By.CssSelector(".rewards_link")).Click();
 
                 Thread.Sleep(1000);
-                IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                js.ExecuteScript("window.scrollBy(0,950);");
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]")));
+
                 driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]")).Click();
 
                 Thread.Sleep(1000);
-                js.ExecuteScript("window.scrollBy(0,950);");
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button")));
                 driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button")).Click();
                 Thread.Sleep(1000);
                 driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[2]/div[2]/div[3]/button")).Click();
                 Thread.Sleep(1000);
                 driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[3]/div[2]/div[3]/button")).Click();
                 Thread.Sleep(1000);
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button")));
                 driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button")).Click();
                 Thread.Sleep(1000);
                 driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button")).Click();
@@ -166,12 +211,13 @@ namespace Fuset
                 driver.FindElement(By.CssSelector(".rewards_link")).Click();
 
                 Thread.Sleep(1000);
-                IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                js.ExecuteScript("window.scrollBy(0,950);");
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]")));
+                
                 driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]")).Click();
 
+
                 Thread.Sleep(1000);
-                js.ExecuteScript("window.scrollBy(0,700);");
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button")));
                 driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button")).Click();
                 Thread.Sleep(1000);
                 driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button")).Click();
@@ -315,10 +361,8 @@ namespace Fuset
                 {
 
                 }
-                //driver.Navigate().Refresh();
-                //driver.FindElement(By.CssSelector(".rewards_link")).Click();
-                //calculete(driver.FindElement(By.Id("balance")).Text , driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text);
-                //UpdateLog("new_RP = " + Convert.ToString(driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text));
+
+
                 driver.Quit();
 
 
@@ -425,7 +469,21 @@ namespace Fuset
 
         private void button3_Click(object sender, EventArgs e)
         {
-            UpdateLog("текс");
+            options = new ChromeOptions();
+            //options.AddArgument("--headless");
+            //options.AddArgument("--disable-gpu");
+            //options.AddArgument("--no-sandbox");
+            //options.AddArgument("--ignore-certificate-errors");
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
+            //options.AddArguments("--start-maximized");
+            IWebDriver driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+            //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
+
+            driver.Navigate().GoToUrl("https://freebitco.in/");
+            Thread.Sleep(10000);
+            UpdateLog(SendRecaptchav2Request());
+
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -480,7 +538,6 @@ namespace Fuset
             options.AddArguments("--start-maximized");
             driver = new ChromeDriver(options);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
             driver.Navigate().GoToUrl("https://freebitco.in/");
 
             //driver.FindElement(By.CssSelector(".login_menu_button")).Click();
