@@ -38,46 +38,35 @@ namespace Fuset
         private SQLiteConnection m_dbConn;
         private SQLiteCommand m_sqlCmd;
 
-        public string SendRecaptchav2Request()
+        public void Rucaptchav2(IWebDriver driver)
         {
-            //POST
-            try
+            string id;
+            int reqcount = 0;
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("window.open()");
+            driver.SwitchTo().Window(driver.WindowHandles.Last());
+            driver.Navigate().GoToUrl("http://rucaptcha.com/in.php?key=50e9fba39de714daa84c59e34ad638b2&method=userrecaptcha&googlekey=6LeGfGIUAAAAAEyUovGUehv82L-IdNRusaYFEm5b&pageurl=https://freebitco.in/?op=home&here=now");
+            id = Convert.ToString((driver.FindElement(By.XPath("/html/body")).Text).Replace("OK|", ""));
+            UpdateLog("id капчи: " + id);
+
+            Thread.Sleep(1000);
+            driver.Navigate().GoToUrl("http://rucaptcha.com/res.php?key=50e9fba39de714daa84c59e34ad638b2&action=get&id=" + id);
+
+            while (Convert.ToString(driver.FindElement(By.XPath("/html/body")).Text) == "CAPCHA_NOT_READY" && reqcount < 60)
             {
-                ServicePointManager.Expect100Continue = false;
-                var request = (HttpWebRequest)WebRequest.Create("http://2captcha.com/in.php");
+                Thread.Sleep(3000);
+                driver.Navigate().GoToUrl("http://rucaptcha.com/res.php?key=50e9fba39de714daa84c59e34ad638b2&action=get&id=" + id);
 
-                var postData = "http://2captcha.com/in.php?key=50e9fba39de714daa84c59e34ad638b2&method=userrecaptcha&googlekey=6LeGfGIUAAAAAEyUovGUehv82L-IdNRusaYFEm5b&pageurl=https://freebitco.in/?op=home";
-                var data = Encoding.ASCII.GetBytes(postData);
-
-                request.Method = "POST";
-
-                request.ContentType = "application/x-www-form-urlencoded";
-                request.ContentLength = data.Length;
-
-                using (var stream = request.GetRequestStream())
-                {
-                    stream.Write(data, 0, data.Length);
-                }
-
-                var response = (HttpWebResponse)request.GetResponse();
-
-                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
-
-                //  GET
-                if (responseString.Contains("OK|"))
-                {
-                    return responseString.Substring(0, 3);
-                }
-                else
-                {
-                    return "Error";
-                }
             }
-            catch (Exception e)
-            {
-                string tt = e.Message;
-                return tt;
-            }
+            
+            driver.SwitchTo().Window(driver.WindowHandles.First());
+
+            IJavaScriptExecutor jse = (IJavaScriptExecutor)driver;
+            jse.ExecuteScript("element = document.getElementsByTagName('input');");
+            jse.ExecuteScript("element(0).value='" + Convert.ToString((driver.FindElement(By.XPath("/html/body")).Text).Replace("OK|", "")) + "';");
+
+            //driver.FindElement(By.Id("g-recaptcha-response")).SendKeys(Convert.ToString((driver.FindElement(By.XPath("/html/body")).Text).Replace("OK|", "")));
+            
 
         }
 
@@ -212,7 +201,7 @@ namespace Fuset
 
                 Thread.Sleep(1000);
                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]")));
-                
+
                 driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]")).Click();
 
 
@@ -224,7 +213,7 @@ namespace Fuset
                 Thread.Sleep(1000);
 
                 driver.Navigate().Refresh();
-             }
+            }
         }
 
         public async void Step()
@@ -317,10 +306,14 @@ namespace Fuset
                 catch (Exception)
                 {
                     UpdateLog("Вторая капча не найдена");
+                    Rucaptchav2(driver);
+
                     try
                     {
-                        IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                        js.ExecuteScript("window.scrollBy(0,950);");
+                        //IJavaScriptExecutor js = driver as IJavaScriptExecutor;
+                        //js.ExecuteScript("window.scrollBy(0,950);");
+
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
 
                         driver.FindElement(By.Id("free_play_form_button")).Click();
 
@@ -335,7 +328,8 @@ namespace Fuset
                 }
 
 
-//Ищем ошибку
+
+//Ищем ошибки
                 if (IsElementVisible(driver.FindElement(By.Id("free_play_error"))))
                 {
                     string error = driver.FindElement(By.Id("free_play_error")).Text;
@@ -350,8 +344,8 @@ namespace Fuset
                 driver.FindElement(By.CssSelector(".free_play_link")).Click();
 
                 Thread.Sleep(1000);
-                IJavaScriptExecutor s = driver as IJavaScriptExecutor;
-                s.ExecuteScript("window.scrollBy(0,950);");
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("winnings")));
+
 
                 try
                 {
@@ -482,7 +476,6 @@ namespace Fuset
 
             driver.Navigate().GoToUrl("https://freebitco.in/");
             Thread.Sleep(10000);
-            UpdateLog(SendRecaptchav2Request());
 
         }
 
@@ -538,7 +531,7 @@ namespace Fuset
             options.AddArguments("--start-maximized");
             driver = new ChromeDriver(options);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            driver.Navigate().GoToUrl("https://freebitco.in/");
+            driver.Navigate().GoToUrl("https://freebitco.in/?op=signup_page");
 
             //driver.FindElement(By.CssSelector(".login_menu_button")).Click();
         }
