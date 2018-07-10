@@ -58,15 +58,26 @@ namespace Fuset
                 driver.Navigate().GoToUrl("http://rucaptcha.com/res.php?key=50e9fba39de714daa84c59e34ad638b2&action=get&id=" + id);
 
             }
-            
-            driver.SwitchTo().Window(driver.WindowHandles.First());
 
-            IJavaScriptExecutor jse = (IJavaScriptExecutor)driver;
-            jse.ExecuteScript("element = document.getElementsByTagName('input');");
-            jse.ExecuteScript("element(0).value='" + Convert.ToString((driver.FindElement(By.XPath("/html/body")).Text).Replace("OK|", "")) + "';");
+            if (reqcount >= 60)
+            {
+                return;
+            }
 
-            //driver.FindElement(By.Id("g-recaptcha-response")).SendKeys(Convert.ToString((driver.FindElement(By.XPath("/html/body")).Text).Replace("OK|", "")));
-            
+            id = Convert.ToString((driver.FindElement(By.XPath("/html/body")).Text).Replace("OK|", ""));
+            Thread.Sleep(1000);
+
+            driver.Close();
+            driver.SwitchTo().Window(driver.WindowHandles.Last());
+            Thread.Sleep(1000);
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','visibility:visible;');", driver.FindElement(By.Id("g-recaptcha-response")));
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("g-recaptcha-response")));
+
+
+            driver.FindElement(By.Id("g-recaptcha-response")).SendKeys(id);
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.Id("g-recaptcha-response")));
+
 
         }
 
@@ -80,7 +91,7 @@ namespace Fuset
             }
             catch (SQLiteException ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                UpdateLog("Error: " + ex.Message);
             }
         }
 
@@ -104,11 +115,11 @@ namespace Fuset
                         dataGridView1.Rows.Add(dTable.Rows[i].ItemArray);
                 }
                 else
-                    MessageBox.Show("Database is empty");
+                    UpdateLog("Database is empty");
             }
             catch (SQLiteException ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                UpdateLog("Error: " + ex.Message);
             }
         }
 
@@ -172,6 +183,16 @@ namespace Fuset
         {
             if (checkBox1.Checked)
             {
+                try
+                {
+                    driver.FindElement(By.CssSelector(".rtoggle-topbar")).Click();
+                }
+                catch (Exception)
+                {
+
+                    UpdateLog("Нашли тулбар, нажали");
+                }
+
                 driver.FindElement(By.CssSelector(".rewards_link")).Click();
 
                 Thread.Sleep(1000);
@@ -197,6 +218,16 @@ namespace Fuset
 
             if (old_RP > 2800 && checkBox2.Checked)
             {
+                try
+                {
+                    driver.FindElement(By.CssSelector(".rtoggle-topbar")).Click();
+                }
+                catch (Exception)
+                {
+
+                    UpdateLog("Нашли тулбар, нажали");
+                }
+
                 driver.FindElement(By.CssSelector(".rewards_link")).Click();
 
                 Thread.Sleep(1000);
@@ -238,6 +269,17 @@ namespace Fuset
 
 
 //Записываем баланс до попытки сбора
+
+                try
+                {
+                    driver.FindElement(By.CssSelector(".rtoggle-topbar")).Click();
+                }
+                catch (Exception)
+                {
+
+                    UpdateLog("Нашли тулбар, нажали");
+                }
+                
                 old_BTC = Convert.ToInt32(driver.FindElement(By.Id("balance")).Text.Replace(".", ""));
 
                 driver.FindElement(By.CssSelector(".rewards_link")).Click();
@@ -251,7 +293,7 @@ namespace Fuset
 //Определение кулдауна сбора
                 if (IsElementVisible(driver.FindElement(By.CssSelector(".countdown_amount"))))             //
                 {
-                    Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 60;
+                    Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 30;
                     
                     UpdateLog("Кулдаун сбора " + Time + " секунд");
                 }
@@ -306,27 +348,40 @@ namespace Fuset
                 catch (Exception)
                 {
                     UpdateLog("Вторая капча не найдена");
-                    Rucaptchav2(driver);
-
-                    try
-                    {
-                        //IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                        //js.ExecuteScript("window.scrollBy(0,950);");
-
-                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
-
-                        driver.FindElement(By.Id("free_play_form_button")).Click();
-
-                        Time = 3660;
-
-                    }
-                    catch (Exception)
-                    {
-                        UpdateLog("Кнопка сбора не найдена");
-
-                    }
+                    
                 }
 
+//ищем рекапчу
+
+
+                try
+                {
+                    //Thread.Sleep(2000);
+                    driver.FindElement(By.CssSelector(".g-recaptcha"));
+                    Rucaptchav2(driver);
+                }
+                catch
+                {
+                    UpdateLog("Рекапча не найдена");
+
+                }
+
+
+                try
+                {
+
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
+
+                    driver.FindElement(By.Id("free_play_form_button")).Click();
+
+                    Time = 3660;
+
+                }
+                catch (Exception)
+                {
+                    UpdateLog("Кнопка сбора не найдена");
+
+                }
 
 
 //Ищем ошибки
@@ -337,11 +392,11 @@ namespace Fuset
                 }
 
 //Запись статистики
-                Thread.Sleep(7000);
+                Thread.Sleep(1000);
 
                 //driver.FindElement(By.CssSelector(".close-reveal-modal")).Click();
-                driver.FindElement(By.CssSelector(".rewards_link")).Click();
-                driver.FindElement(By.CssSelector(".free_play_link")).Click();
+                //driver.FindElement(By.CssSelector(".rewards_link")).Click();
+                //driver.FindElement(By.CssSelector(".free_play_link")).Click();
 
                 Thread.Sleep(1000);
                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("winnings")));
@@ -398,6 +453,8 @@ namespace Fuset
 
         private void button2_Click(object sender, EventArgs e)
         {
+            DesiredCapabilities dc = new DesiredCapabilities();
+
             options = new ChromeOptions();
             //options.AddArgument("--headless");
             //options.AddArgument("--disable-gpu");
@@ -411,53 +468,12 @@ namespace Fuset
 
             driver.Navigate().GoToUrl("https://freebitco.in/");
 
-            if (Time <= 0 && checkBox1.Checked)
+            //Thread.Sleep(2000);
+
+            if (IsElementVisible(driver.FindElement(By.CssSelector(".g-recaptcha"))))
             {
-                driver.FindElement(By.CssSelector(".rewards_link")).Click();
-
-                Thread.Sleep(1000);
-                IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                js.ExecuteScript("window.scrollBy(0,950);");
-                driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]")).Click();
-
-                Thread.Sleep(1000);
-                js.ExecuteScript("window.scrollBy(0,950);");
-                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button")).Click();
-                Thread.Sleep(1000);
-                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[2]/div[2]/div[3]/button")).Click();
-                Thread.Sleep(1000);
-                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[3]/div[2]/div[3]/button")).Click();
-                Thread.Sleep(1000);
-                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button")).Click();
-                Thread.Sleep(1000);
-                driver.FindElement(By.XPath("//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button")).Click();
-
-                driver.Navigate().Refresh();
-            }
-
-            if (Time <= 0 && checkBox2.Checked)
-            {
-                driver.FindElement(By.CssSelector(".rewards_link")).Click();
-
-                Thread.Sleep(1000);
-                IJavaScriptExecutor js = driver as IJavaScriptExecutor;
-                js.ExecuteScript("window.scrollBy(0,950);");
-                driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]")).Click();
-
-                Thread.Sleep(1000);
-                js.ExecuteScript("window.scrollBy(0,700);");
-                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button")).Click();
-                Thread.Sleep(1000);
-                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button")).Click();
-                Thread.Sleep(1000);
-                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[3]/div[2]/div[3]/button")).Click();
-                Thread.Sleep(1000);
-                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[4]/div[2]/div[3]/button")).Click();
-                Thread.Sleep(1000);
-                driver.FindElement(By.XPath("//*[@id='fp_bonus_rewards']/div[5]/div[2]/div[3]/button")).Click();
-
-                driver.Navigate().Refresh();
-            }
+                UpdateLog("Вижю БТР");
+            } 
 
         }
 
@@ -475,7 +491,15 @@ namespace Fuset
             //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
 
             driver.Navigate().GoToUrl("https://freebitco.in/");
-            Thread.Sleep(10000);
+            Thread.Sleep(1000);
+
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','visibility:visible;');", driver.FindElement(By.Id("g-recaptcha-response")));
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("g-recaptcha-response")));
+            driver.FindElement(By.Id("g-recaptcha-response")).SendKeys("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.Id("g-recaptcha-response")));
+
+            //driver.FindElement(By.Id("free_play_form_button")).Click();
 
         }
 
