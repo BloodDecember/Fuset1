@@ -183,15 +183,6 @@ namespace Fuset
         {
             if (checkBox1.Checked)
             {
-                try
-                {
-                    driver.FindElement(By.CssSelector(".rtoggle-topbar")).Click();
-                }
-                catch (Exception)
-                {
-
-                    UpdateLog("Нашли тулбар, нажали");
-                }
 
                 driver.FindElement(By.CssSelector(".rewards_link")).Click();
 
@@ -218,15 +209,6 @@ namespace Fuset
 
             if (old_RP > 2800 && checkBox2.Checked)
             {
-                try
-                {
-                    driver.FindElement(By.CssSelector(".rtoggle-topbar")).Click();
-                }
-                catch (Exception)
-                {
-
-                    UpdateLog("Нашли тулбар, нажали");
-                }
 
                 driver.FindElement(By.CssSelector(".rewards_link")).Click();
 
