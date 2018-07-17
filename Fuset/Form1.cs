@@ -28,6 +28,7 @@ namespace Fuset
         int spred_BTC = 0;
         int spred_RP = 0;
         int Time = 0;
+        bool simple_captcha_active = true;
         IWebElement logo;
         String logoSRC;
         Uri imageURL;
@@ -38,7 +39,7 @@ namespace Fuset
         private SQLiteConnection m_dbConn;
         private SQLiteCommand m_sqlCmd;
 
-        public void simple_captcha(IWebDriver driver)
+        public bool simple_captcha(IWebDriver driver)
         {
             if (IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
             {
@@ -46,26 +47,67 @@ namespace Fuset
                 logoSRC = logo.GetAttribute("src");
                 imageURL = new Uri(logoSRC);
                 PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                logoSRC = Rucaptcha.Recognize(PuthToPicture);
 
+                if (logoSRC == "ERROR|TIMEOUT")
+                {
+                    simple_captcha_active = false;
+                    return false;
+                }
+                else
+                {
+                    FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(logoSRC);
 
+                    logo = FandS(driver, "//*[@id='botdetect_free_play_captcha2']/div[1]/img");
+                    logoSRC = logo.GetAttribute("src");
+                    imageURL = new Uri(logoSRC);
+                    PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                    logoSRC = Rucaptcha.Recognize(PuthToPicture);
+                    FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
 
-
-                //logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
-                //logoSRC = logo.GetAttribute("src");
-                //imageURL = new Uri(logoSRC);
-                //PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                //driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                    simple_captcha_active = true;
+                    return true;
+                }
+                
 
 
             }
             if (!IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
             {
                 FandS(driver, "switch_captchas_button").Click();
+
+                logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
+                logoSRC = logo.GetAttribute("src");
+                imageURL = new Uri(logoSRC);
+                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                logoSRC = Rucaptcha.Recognize(PuthToPicture);
+
+                if (logoSRC == "ERROR | TIMEOUT")
+                {
+                    simple_captcha_active = false;
+                    return false;
+                }
+                else
+                {
+                    FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(logoSRC);
+
+                    logo = FandS(driver, "//*[@id='botdetect_free_play_captcha2']/div[1]/img");
+                    logoSRC = logo.GetAttribute("src");
+                    imageURL = new Uri(logoSRC);
+                    PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                    logoSRC = Rucaptcha.Recognize(PuthToPicture);
+                    FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
+
+                    simple_captcha_active = true;
+                    return true;
+                }
             }
 
+            simple_captcha_active = false;
+            return false;
 
-            
+
+
         }
 
         public void Rucaptchav2(IWebDriver driver)
@@ -284,10 +326,12 @@ namespace Fuset
 
         public void bonus(IWebDriver driver)
         {
+            
 
             if (checkBox1.Checked)
             {
                 driver.FindElement(By.PartialLinkText("REWARDS")).Click();
+                old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
                 FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]").Click();
 
                 if (old_RP >= 12 && old_RP < 120) { FandS(driver, "//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button").Click(); }
@@ -302,6 +346,7 @@ namespace Fuset
             if (checkBox2.Checked)
             {
                 driver.FindElement(By.PartialLinkText("REWARDS")).Click();
+                old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
                 FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]").Click();
 
                 if (old_RP >= 1520 && old_RP < 2800) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[3]/div[2]/div[3]/button").Click(); }
@@ -334,35 +379,20 @@ namespace Fuset
                 driver.Navigate().GoToUrl("https://freebitco.in/");
 
 
-//Записываем баланс до попытки сбора
 
-                try
-                {
-                    driver.FindElement(By.CssSelector(".rtoggle-topbar")).Click();
-                }
-                catch (Exception)
-                {
-
-                    UpdateLog("Нашли тулбар, нажали");
-                }
-                
-                old_BTC = Convert.ToInt32(driver.FindElement(By.Id("balance")).Text.Replace(".", ""));
-
-                driver.FindElement(By.CssSelector(".rewards_link")).Click();
-                old_RP = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='rewards_tab']/div[2]/div/div[2]")).Text.Replace(",", ""));
-
-                UpdateLog("old_RP = " + Convert.ToString(old_RP));
-
-                driver.Navigate().Refresh();
 
 
 //Определение кулдауна сбора
-                if (IsElementVisible(driver.FindElement(By.CssSelector(".countdown_amount"))))             //
+                if (IsElementVisible(FandS(driver, ".countdown_amount")))
                 {
-                    Time = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 30;
+                    Time = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
                     
                     UpdateLog("Кулдаун сбора " + Time + " секунд");
+
+                    driver.Quit();
+                    return;
                 }
+                driver.Navigate().Refresh();
 
 
 //Активация бонусов
@@ -371,29 +401,44 @@ namespace Fuset
 
 
 
-
                 //ищем рекапчу
-                if (IsElementVisible(FandS(driver, ".g-recaptcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
+
+                if (simple_captcha_active)
                 {
-                    Rucaptchav2(driver);
-                }
-                if (!IsElementVisible(FandS(driver, ".g-recaptcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
-                {
-                    FandS(driver, "switch_captchas_button").Click();
-                    Rucaptchav2(driver);
+                    simple_captcha(driver);
                 }
 
-                
+
+                if(!simple_captcha_active)
+                {
+                    if (IsElementVisible(FandS(driver, ".g-recaptcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
+                    {
+                        Rucaptchav2(driver);
+                    }
+                    if (!IsElementVisible(FandS(driver, ".g-recaptcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
+                    {
+                        FandS(driver, "switch_captchas_button").Click();
+                        Rucaptchav2(driver);
+                    }
+                    if (IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
+                    {
+                        Rucaptchav2(driver);
+                    }
+                    if (!IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
+                    {
+                        
+                    }
+                }
+
+
 
 
                 try
                 {
 
-                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
-
-                    driver.FindElement(By.Id("free_play_form_button")).Click();
-
-                    Time = 3660;
+                    FandS(driver, "free_play_form_button").Click();
+                    Thread.Sleep(3000);
+                    
 
                 }
                 catch (Exception)
@@ -411,11 +456,6 @@ namespace Fuset
                 }
 
 //Запись статистики
-                Thread.Sleep(1000);
-
-                //driver.FindElement(By.CssSelector(".close-reveal-modal")).Click();
-                //driver.FindElement(By.CssSelector(".rewards_link")).Click();
-                //driver.FindElement(By.CssSelector(".free_play_link")).Click();
 
                 Thread.Sleep(1000);
                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("winnings")));
@@ -430,7 +470,7 @@ namespace Fuset
 
                 }
 
-
+                Time = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 30;
                 driver.Quit();
 
 
@@ -472,8 +512,34 @@ namespace Fuset
 
         private void button2_Click(object sender, EventArgs e)
         {
-            DesiredCapabilities dc = new DesiredCapabilities();
 
+            options = new ChromeOptions();
+            Proxy proxy = new Proxy();
+            proxy.Kind = ProxyKind.Manual;
+            proxy.IsAutoDetect = false;
+            proxy.HttpProxy = "77.247.239.81:8080";
+            proxy.SslProxy = "77.247.239.81:8080";
+            options.Proxy = proxy;
+            options.AddArgument("ignore-certificate-errors");
+            //options.AddArgument("--headless");
+            //options.AddArgument("--disable-gpu");
+            //options.AddArgument("--no-sandbox");
+            //options.AddArgument("--ignore-certificate-errors");
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
+            options.AddArguments("--start-maximized");
+            IWebDriver driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+            //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
+
+            driver.Navigate().GoToUrl("https://freebitco.in/");
+
+            
+
+
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
             options = new ChromeOptions();
             //options.AddArgument("--headless");
             //options.AddArgument("--disable-gpu");
@@ -488,34 +554,6 @@ namespace Fuset
             driver.Navigate().GoToUrl("https://freebitco.in/");
 
             simple_captcha(driver);
-
-
-
-        }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-            options = new ChromeOptions();
-            //options.AddArgument("--headless");
-            //options.AddArgument("--disable-gpu");
-            //options.AddArgument("--no-sandbox");
-            //options.AddArgument("--ignore-certificate-errors");
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
-            //options.AddArguments("--start-maximized");
-            IWebDriver driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
-
-            driver.Navigate().GoToUrl("https://freebitco.in/");
-            Thread.Sleep(1000);
-
-
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','visibility:visible;');", driver.FindElement(By.Id("g-recaptcha-response")));
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("g-recaptcha-response")));
-            driver.FindElement(By.Id("g-recaptcha-response")).SendKeys("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.Id("g-recaptcha-response")));
-
-            //driver.FindElement(By.Id("free_play_form_button")).Click();
 
         }
 
