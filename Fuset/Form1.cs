@@ -28,6 +28,7 @@ namespace Fuset
         int spred_BTC = 0;
         int spred_RP = 0;
         int Time = 0;
+        int miss = 0;
         bool simple_captcha_active = true;
         IWebElement logo;
         String logoSRC;
@@ -66,6 +67,7 @@ namespace Fuset
                     FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
 
                     simple_captcha_active = true;
+                    miss++;
                     return true;
                 }
                 
@@ -99,6 +101,7 @@ namespace Fuset
                     FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
 
                     simple_captcha_active = true;
+                    miss++;
                     return true;
                 }
             }
@@ -153,11 +156,11 @@ namespace Fuset
 
         }
 
-        public void DataUpdate(int RP, int BTC)
+        public void DataUpdate(int RP, int BTC, int miss)
         {
             try
             {
-                m_sqlCmd.CommandText = "INSERT INTO Catalog ('Время', 'RP', 'BTC') values ('" + DateTime.Now + "' , '" + RP + "' , '" + BTC + "')";
+                m_sqlCmd.CommandText = "INSERT INTO Catalog ('Время', 'RP', 'BTC', 'miss') values ('" + DateTime.Now + "' , '" + RP + "' , '" + BTC + "', '" + miss + "')";
 
                 m_sqlCmd.ExecuteNonQuery();
             }
@@ -290,7 +293,7 @@ namespace Fuset
             }
         }
 
-        public void calculete(string BTC, string RP)
+        public void calculete(string BTC, string RP, int miss)
         {
 
             Action action = () =>
@@ -307,7 +310,7 @@ namespace Fuset
 
                 if (spred_BTC != 0)
                 {
-                    DataUpdate(spred_RP, spred_BTC);
+                    DataUpdate(spred_RP, spred_BTC, miss);
                     DataGridUpdate();
                 }
             };
@@ -401,7 +404,7 @@ namespace Fuset
 
 
 
-                //ищем рекапчу
+                
 
                 if (simple_captcha_active)
                 {
@@ -433,44 +436,31 @@ namespace Fuset
 
 
 
-                try
-                {
+                
+                FandS(driver, "free_play_form_button").Click();
+                Thread.Sleep(3000);
 
-                    FandS(driver, "free_play_form_button").Click();
-                    Thread.Sleep(3000);
+                
                     
 
-                }
-                catch (Exception)
-                {
-                    UpdateLog("Кнопка сбора не найдена");
-
-                }
-
-
-//Ищем ошибки
-                if (IsElementVisible(driver.FindElement(By.Id("free_play_error"))))
-                {
-                    string error = driver.FindElement(By.Id("free_play_error")).Text;
-                    UpdateLog(error);
-                }
-
-//Запись статистики
+                //Запись статистики
 
                 Thread.Sleep(1000);
-                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("winnings")));
 
 
                 try
                 {
-                    calculete(driver.FindElement(By.Id("winnings")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text);
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("winnings")));
+
+                    calculete(driver.FindElement(By.Id("winnings")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text, miss);
+                    Time = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
                 }
                 catch (Exception)
                 {
 
                 }
 
-                Time = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 30;
+                
                 driver.Quit();
 
 
@@ -485,7 +475,7 @@ namespace Fuset
         public Form1()
         {
             InitializeComponent();
-            Rucaptcha.Key = "50e9fba39de714daa84c59e34ad638b2";
+            
             
         }
 
@@ -540,20 +530,11 @@ namespace Fuset
 
         private void button3_Click(object sender, EventArgs e)
         {
-            options = new ChromeOptions();
-            //options.AddArgument("--headless");
-            //options.AddArgument("--disable-gpu");
-            //options.AddArgument("--no-sandbox");
-            //options.AddArgument("--ignore-certificate-errors");
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
-            options.AddArguments("--start-maximized");
-            IWebDriver driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
-
-            driver.Navigate().GoToUrl("https://freebitco.in/");
-
-            simple_captcha(driver);
+            StreamWriter sw = new StreamWriter(Application.StartupPath + @"\Setting.txt");
+            sw.WriteLine(textBox1.Text);
+            //Write a second line of text
+            //sw.WriteLine("From the StreamWriter class");
+            sw.Close();
 
         }
 
@@ -574,6 +555,8 @@ namespace Fuset
         {
             listBox1.SetSelected(0, true);
 
+            
+
             m_dbConn = new SQLiteConnection();
             m_sqlCmd = new SQLiteCommand();
 
@@ -586,7 +569,7 @@ namespace Fuset
                 m_dbConn.Open();
                 m_sqlCmd.Connection = m_dbConn;
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Catalog (id INTEGER PRIMARY KEY AUTOINCREMENT, Время TEXT, RP INTEGER, BTC INTEGER)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Catalog (id INTEGER PRIMARY KEY AUTOINCREMENT, Время TEXT, RP INTEGER, BTC INTEGER, miss INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
                 
@@ -596,6 +579,17 @@ namespace Fuset
                 
                 MessageBox.Show("Error: " + ex.Message);
             }
+
+            
+            if (File.Exists("Setting.txt"))
+            {
+                StreamReader sr = new StreamReader(Application.StartupPath + @"\Setting.txt");
+                //Read the first line of text
+                textBox1.Text = sr.ReadLine();
+                sr.Close();
+            }
+
+            Rucaptcha.Key = textBox1.Text;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -612,6 +606,11 @@ namespace Fuset
             driver.Navigate().GoToUrl("https://freebitco.in/?op=signup_page");
 
             //driver.FindElement(By.CssSelector(".login_menu_button")).Click();
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            
         }
     }
 }
