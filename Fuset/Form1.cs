@@ -22,14 +22,12 @@ namespace Fuset
     
     public partial class Form1 : Form
     {
-        string PuthToPicture; //Переменная для хранения пути к картинке капчи на компьютере
-        int old_RP = 0; 
-        int old_BTC = 0;
+        string PuthToPicture;
+        int old_RP = 0;
         int spred_BTC = 0;
         int spred_RP = 0;
         int Time = 0;
         int miss = 0;
-        bool simple_captcha_active = true;
         IWebElement logo;
         String logoSRC;
         Uri imageURL;
@@ -39,6 +37,33 @@ namespace Fuset
         private String dbFileName = "sample.sqlite";
         private SQLiteConnection m_dbConn;
         private SQLiteCommand m_sqlCmd;
+        SQLiteDataReader sqlite_datareader;
+
+        public string data_get_proxy(int id_prof)
+        {
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT proxy FROM Setting WHERE id = " + id_prof;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+
+            string proxy = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
+            return proxy;
+        }
+
+        public string data_get_prof(int id_prof)
+        {
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT prof FROM Setting WHERE id = " + id_prof;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+
+            string prof = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
+            return prof;
+        }
 
         public bool simple_captcha(IWebDriver driver)
         {
@@ -52,7 +77,6 @@ namespace Fuset
 
                 if (logoSRC == "ERROR|TIMEOUT")
                 {
-                    simple_captcha_active = false;
                     return false;
                 }
                 else
@@ -65,9 +89,8 @@ namespace Fuset
                     PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
                     logoSRC = Rucaptcha.Recognize(PuthToPicture);
                     FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
-
-                    simple_captcha_active = true;
-                    miss++;
+                    
+                    miss += 4;
                     return true;
                 }
                 
@@ -86,7 +109,6 @@ namespace Fuset
 
                 if (logoSRC == "ERROR | TIMEOUT")
                 {
-                    simple_captcha_active = false;
                     return false;
                 }
                 else
@@ -99,14 +121,12 @@ namespace Fuset
                     PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
                     logoSRC = Rucaptcha.Recognize(PuthToPicture);
                     FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
-
-                    simple_captcha_active = true;
-                    miss++;
+                    
+                    miss += 4;
                     return true;
                 }
             }
-
-            simple_captcha_active = false;
+            
             return false;
 
 
@@ -152,7 +172,7 @@ namespace Fuset
 
             driver.FindElement(By.Id("g-recaptcha-response")).SendKeys(id);
             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.Id("g-recaptcha-response")));
-
+            miss += 16;
 
         }
 
@@ -170,6 +190,35 @@ namespace Fuset
             }
         }
 
+        public void DataGridUpdate1()
+        {
+            DataTable dTable = new DataTable();
+            String sqlQuery;
+
+
+            try
+            {
+                sqlQuery = "SELECT * FROM Setting";
+                SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, m_dbConn);
+                adapter.Fill(dTable);
+
+                if (dTable.Rows.Count > 0)
+                {
+                    dataGridView2.Rows.Clear();
+
+                    for (int i = dTable.Rows.Count - 1; i >= 0; i--)
+                        dataGridView2.Rows.Add(dTable.Rows[i].ItemArray);
+                }
+                else
+                    UpdateLog("Database is empty");
+            }
+            catch (SQLiteException ex)
+            {
+                UpdateLog("Error: " + ex.Message);
+            }
+        }
+
+
         public void DataGridUpdate()
         {
             DataTable dTable = new DataTable();
@@ -178,7 +227,7 @@ namespace Fuset
 
             try
             {
-                sqlQuery = "SELECT * FROM Catalog";
+                sqlQuery = "SELECT * FROM Log";
                 SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, m_dbConn);
                 adapter.Fill(dTable);
 
@@ -365,6 +414,8 @@ namespace Fuset
         {
             richTextBox1.Clear();
             timer1.Stop();
+            miss = 0;
+            
             DataGridUpdate();
             await Task.Run(() =>
             {
@@ -377,7 +428,7 @@ namespace Fuset
                 options.AddArguments("--start-maximized");
                 IWebDriver driver = new ChromeDriver(options);
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
+                //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
 
                 driver.Navigate().GoToUrl("https://freebitco.in/");
 
@@ -404,48 +455,21 @@ namespace Fuset
 
 
 
-                
 
-                if (simple_captcha_active)
+                do
                 {
-                    simple_captcha(driver);
-                }
+                    driver.Navigate().Refresh();
+                    if (IsElementVisible(FandS(driver, "switch_captchas_button")))
+                        simple_captcha(driver);
 
-
-                if(!simple_captcha_active)
-                {
-                    if (IsElementVisible(FandS(driver, ".g-recaptcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
-                    {
-                        Rucaptchav2(driver);
-                    }
-                    if (!IsElementVisible(FandS(driver, ".g-recaptcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
-                    {
-                        FandS(driver, "switch_captchas_button").Click();
-                        Rucaptchav2(driver);
-                    }
-                    if (IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
-                    {
-                        Rucaptchav2(driver);
-                    }
-                    if (!IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
-                    {
-                        
-                    }
-                }
-
-
-
-
-                
-                FandS(driver, "free_play_form_button").Click();
-                Thread.Sleep(3000);
-
-                
                     
+                    if (IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
+                        Rucaptchav2(driver);
 
-                //Запись статистики
-
-                Thread.Sleep(1000);
+                    FandS(driver, "free_play_form_button").Click();
+                    Thread.Sleep(3000);
+                }
+                while (IsElementVisible(FandS(driver, "free_play_form_button")));
 
 
                 try
@@ -455,6 +479,7 @@ namespace Fuset
                     calculete(driver.FindElement(By.Id("winnings")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text, miss);
                     Time = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
                 }
+
                 catch (Exception)
                 {
 
@@ -467,7 +492,6 @@ namespace Fuset
             });
             
             label2.Text = Convert.ToString(Time);
-
             timer1.Start();
             Go.Text = "Стапэ!";
         }
@@ -503,23 +527,21 @@ namespace Fuset
         private void button2_Click(object sender, EventArgs e)
         {
 
+
+
             options = new ChromeOptions();
             Proxy proxy = new Proxy();
             proxy.Kind = ProxyKind.Manual;
             proxy.IsAutoDetect = false;
-            proxy.HttpProxy = "77.247.239.81:8080";
-            proxy.SslProxy = "77.247.239.81:8080";
+            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
             options.Proxy = proxy;
             options.AddArgument("ignore-certificate-errors");
-            //options.AddArgument("--headless");
-            //options.AddArgument("--disable-gpu");
-            //options.AddArgument("--no-sandbox");
-            //options.AddArgument("--ignore-certificate-errors");
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
+
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
             options.AddArguments("--start-maximized");
             IWebDriver driver = new ChromeDriver(options);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
 
             driver.Navigate().GoToUrl("https://freebitco.in/");
 
@@ -569,10 +591,14 @@ namespace Fuset
                 m_dbConn.Open();
                 m_sqlCmd.Connection = m_dbConn;
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Catalog (id INTEGER PRIMARY KEY AUTOINCREMENT, Время TEXT, RP INTEGER, BTC INTEGER, miss INTEGER)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Log (id INTEGER PRIMARY KEY AUTOINCREMENT, Время TEXT, RP INTEGER, BTC INTEGER, miss INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
-                
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Setting (id INTEGER PRIMARY KEY AUTOINCREMENT, akk TEXT, prof TEXT, proxy TEXT)";
+                m_sqlCmd.ExecuteNonQuery();
+
+
+
             }
             catch (SQLiteException ex)
             {
@@ -595,22 +621,85 @@ namespace Fuset
         private void button1_Click(object sender, EventArgs e)
         {
             options = new ChromeOptions();
-            //options.AddArgument("--headless");
-            //options.AddArgument("--disable-gpu");
-            //options.AddArgument("--no-sandbox");
-            //options.AddArgument("--ignore-certificate-errors");
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
-            options.AddArguments("--start-maximized");
-            driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            driver.Navigate().GoToUrl("https://freebitco.in/?op=signup_page");
+            //Proxy proxy = new Proxy();
+            //proxy.Kind = ProxyKind.Manual;
+            //proxy.IsAutoDetect = false;
+            //proxy.HttpProxy = data_get_proxy(2);
+            //proxy.SslProxy = data_get_proxy(2);
+            //options.Proxy = proxy;
+            //options.AddArgument("ignore-certificate-errors");
 
-            //driver.FindElement(By.CssSelector(".login_menu_button")).Click();
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
+            options.AddArguments("--start-maximized");
+            IWebDriver driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+
+            driver.Navigate().GoToUrl("https://freebitco.in/");
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
             
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            
+            DataGridUpdate();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                m_sqlCmd.CommandText = "INSERT INTO Setting (id, 'akk', 'prof', 'proxy') values ('" + Convert.ToInt32(textBox6.Text) + "' , '" + textBox2.Text + "' , '" + textBox3.Text + "' , '" + textBox4.Text + "')";
+
+
+                m_sqlCmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                UpdateLog("Error: " + ex.Message);
+            }
+
+            DataGridUpdate1();
+            textBox2.Clear();
+            textBox3.Clear();
+            textBox4.Clear();
+            textBox6.Clear();
+        }
+
+        private void button6_Click(object sender, EventArgs e)//тестовая кнопка
+        {
+            List<string> ImportedFiles = new List<string>();
+            //using (SQLiteConnection connect = new SQLiteConnection(@"Data Source=C:\Documents and Settings\js91162\Desktop\CMMData.db3"))
+            {
+                //connect.Open();
+                //using (SQLiteCommand fmd = connect.CreateCommand())
+                //{
+                m_sqlCmd.CommandText = @"SELECT * FROM Setting";
+                m_sqlCmd.CommandType = CommandType.Text;
+                SQLiteDataReader r = m_sqlCmd.ExecuteReader();
+                while (r.Read())
+                {
+                    ImportedFiles.Add(Convert.ToString(r["akk"]));
+                }
+                //}
+                UpdateLog(Convert.ToString(ImportedFiles));
+            }
+        }
+
+        private void button7_Click(object sender, EventArgs e)//обновление
+        {
+            DataGridUpdate1();
+        }
+
+        private void button8_Click(object sender, EventArgs e)//уделение строки из сеттингов по ид
+        {
+
+            m_sqlCmd.CommandText = "DELETE FROM Setting WHERE id=" + Convert.ToInt32(textBox6.Text) + "";
+            m_sqlCmd.ExecuteNonQuery();
+            DataGridUpdate1();
         }
     }
 }
