@@ -28,16 +28,49 @@ namespace Fuset
         int spred_RP = 0;
         int Time = 0;
         int miss = 0;
+        bool bad_ip = false;
+        bool busy = false;
         IWebElement logo;
         String logoSRC;
         Uri imageURL;
-        IWebDriver driver;
+        List<int> timing_list = new List<int>();
         ChromeOptions options;
 
         private String dbFileName = "sample.sqlite";
         private SQLiteConnection m_dbConn;
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
+
+        public void get_timing_list()
+        {
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT Count(*) FROM Setting";
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+
+            
+
+            timing_list = new List<int>(sqlite_datareader.GetInt32(0));
+            sqlite_datareader.Close();
+
+
+            m_sqlCmd.CommandText = @"SELECT id FROM Setting";
+            m_sqlCmd.CommandType = CommandType.Text;
+            SQLiteDataReader reader = m_sqlCmd.ExecuteReader();
+
+            while (reader.Read()) // построчно считываем данные
+            {
+                //object id = reader.GetValue(0);
+                timing_list.Insert(Convert.ToInt32(reader.GetValue(0)), 0);
+
+            }
+
+            reader.Close();
+
+            //UpdateLog(Convert.ToString(timing_list[0]));
+            //UpdateLog(Convert.ToString(timing_list[1]));
+            //UpdateLog(Convert.ToString(timing_list.Count));
+        }
 
         public string data_get_proxy(int id_prof)
         {
@@ -249,6 +282,8 @@ namespace Fuset
 
         public void UpdateLog(string s)
         {
+            
+
             Action action = () =>
             {
                 richTextBox1.AppendText(s + "\n");
@@ -410,25 +445,28 @@ namespace Fuset
             }
         }
 
-        public async void Step()
+        public async void Step(int i)
         {
             richTextBox1.Clear();
-            timer1.Stop();
             miss = 0;
             
             DataGridUpdate();
             await Task.Run(() =>
             {
-                options = new ChromeOptions();
                 //options.AddArgument("--headless");
-                //options.AddArgument("--disable-gpu");
-                //options.AddArgument("--no-sandbox");
-                //options.AddArgument("--ignore-certificate-errors");
-                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\TestProf");
+                options = new ChromeOptions();
+                Proxy proxy = new Proxy();
+                proxy.Kind = ProxyKind.Manual;
+                proxy.IsAutoDetect = false;
+                proxy.HttpProxy = data_get_proxy(i);
+                proxy.SslProxy = data_get_proxy(i);
+                options.Proxy = proxy;
+                options.AddArgument("ignore-certificate-errors");
+
+                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
                 options.AddArguments("--start-maximized");
                 IWebDriver driver = new ChromeDriver(options);
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(20);
 
                 driver.Navigate().GoToUrl("https://freebitco.in/");
 
@@ -436,15 +474,27 @@ namespace Fuset
 
 
 
-//Определение кулдауна сбора
+                //Определение кулдауна сбора
+                if (IsElementVisible(FandS(driver, "multi_acct_same_ip")))
+                {
+                    bad_ip = true;
+
+
+                    timing_list[i] = 10000;
+                    driver.Quit();
+                    busy = false;
+                    return;
+                }
+
                 if (IsElementVisible(FandS(driver, ".countdown_amount")))
                 {
-                    Time = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
+                    timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
                     
-                    UpdateLog("Кулдаун сбора " + Time + " секунд");
+                    UpdateLog("Кулдаун сбора " + timing_list[i] + " секунд");
 
                     driver.Quit();
-                    return;
+                    busy = false;
+                    return ;
                 }
                 driver.Navigate().Refresh();
 
@@ -477,7 +527,7 @@ namespace Fuset
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("winnings")));
 
                     calculete(driver.FindElement(By.Id("winnings")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text, miss);
-                    Time = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
+                    timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
                 }
 
                 catch (Exception)
@@ -487,13 +537,9 @@ namespace Fuset
 
                 
                 driver.Quit();
-
+                busy = false;
 
             });
-            
-            label2.Text = Convert.ToString(Time);
-            timer1.Start();
-            Go.Text = "Стапэ!";
         }
 
         public Form1()
@@ -562,15 +608,24 @@ namespace Fuset
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (Time >= 0)
-            {
+                richTextBox1.Clear();
+
+                for (int i = 0; i < timing_list.Count; i++)
+                {
+                    timing_list[i]--;
+
+                    if (timing_list[i] <= 0 && busy == false)
+                    {
+                    busy = true;
+                    Step(i);
+                    }
+
+                }
+                foreach (var item in timing_list)
+                {
+                    UpdateLog(Convert.ToString(item) + "\t");
+                }
                 Time -= 1;
-                label2.Text = Convert.ToString(Time);
-            }
-            else
-            {
-                Step();
-            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -616,18 +671,19 @@ namespace Fuset
             }
 
             Rucaptcha.Key = textBox1.Text;
+            get_timing_list();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             options = new ChromeOptions();
-            //Proxy proxy = new Proxy();
-            //proxy.Kind = ProxyKind.Manual;
-            //proxy.IsAutoDetect = false;
-            //proxy.HttpProxy = data_get_proxy(2);
-            //proxy.SslProxy = data_get_proxy(2);
-            //options.Proxy = proxy;
-            //options.AddArgument("ignore-certificate-errors");
+            Proxy proxy = new Proxy();
+            proxy.Kind = ProxyKind.Manual;
+            proxy.IsAutoDetect = false;
+            proxy.HttpProxy = " ";
+            proxy.SslProxy = " ";
+            options.Proxy = proxy;
+            options.AddArgument("ignore-certificate-errors");
 
             options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
             options.AddArguments("--start-maximized");
@@ -667,26 +723,37 @@ namespace Fuset
             textBox3.Clear();
             textBox4.Clear();
             textBox6.Clear();
+
+            get_timing_list();
         }
 
         private void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            List<string> ImportedFiles = new List<string>();
-            //using (SQLiteConnection connect = new SQLiteConnection(@"Data Source=C:\Documents and Settings\js91162\Desktop\CMMData.db3"))
+            options = new ChromeOptions();
+            Proxy proxy = new Proxy();
+            proxy.Kind = ProxyKind.Manual;
+            proxy.IsAutoDetect = false;
+            proxy.HttpProxy = " ";
+            proxy.SslProxy = " ";
+            options.Proxy = proxy;
+            options.AddArgument("ignore-certificate-errors");
+
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
+            options.AddArguments("--start-maximized");
+            IWebDriver driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+
+            driver.Navigate().GoToUrl("https://freebitco.in/");
+            Thread.Sleep(3000);
+
+            if (IsElementVisible(FandS(driver, ".countdown_amount")))
             {
-                //connect.Open();
-                //using (SQLiteCommand fmd = connect.CreateCommand())
-                //{
-                m_sqlCmd.CommandText = @"SELECT * FROM Setting";
-                m_sqlCmd.CommandType = CommandType.Text;
-                SQLiteDataReader r = m_sqlCmd.ExecuteReader();
-                while (r.Read())
-                {
-                    ImportedFiles.Add(Convert.ToString(r["akk"]));
-                }
-                //}
-                UpdateLog(Convert.ToString(ImportedFiles));
+                int i = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
+
+                UpdateLog("Кулдаун сбора " + i + " секунд");
             }
+            //driver.Quit();
+
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
@@ -700,6 +767,7 @@ namespace Fuset
             m_sqlCmd.CommandText = "DELETE FROM Setting WHERE id=" + Convert.ToInt32(textBox6.Text) + "";
             m_sqlCmd.ExecuteNonQuery();
             DataGridUpdate1();
+            get_timing_list();
         }
     }
 }
