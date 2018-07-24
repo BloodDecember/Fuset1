@@ -68,6 +68,7 @@
             this.button7 = new System.Windows.Forms.Button();
             this.textBox6 = new System.Windows.Forms.TextBox();
             this.button8 = new System.Windows.Forms.Button();
+            this.richTextBox2 = new System.Windows.Forms.RichTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
@@ -98,17 +99,17 @@
             // 
             this.richTextBox1.Location = new System.Drawing.Point(415, 225);
             this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.Size = new System.Drawing.Size(314, 193);
+            this.richTextBox1.Size = new System.Drawing.Size(147, 193);
             this.richTextBox1.TabIndex = 2;
             this.richTextBox1.Text = "";
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(493, 91);
+            this.button2.Location = new System.Drawing.Point(477, 91);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 23);
+            this.button2.Size = new System.Drawing.Size(113, 23);
             this.button2.TabIndex = 4;
-            this.button2.Text = "button2";
+            this.button2.Text = "Проверка прокси";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
@@ -364,10 +365,11 @@
             // 
             // textBox5
             // 
-            this.textBox5.Location = new System.Drawing.Point(477, 65);
+            this.textBox5.Location = new System.Drawing.Point(504, 65);
             this.textBox5.Name = "textBox5";
-            this.textBox5.Size = new System.Drawing.Size(113, 20);
+            this.textBox5.Size = new System.Drawing.Size(58, 20);
             this.textBox5.TabIndex = 28;
+            this.textBox5.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
             // button6
             // 
@@ -406,11 +408,20 @@
             this.button8.UseVisualStyleBackColor = true;
             this.button8.Click += new System.EventHandler(this.button8_Click);
             // 
+            // richTextBox2
+            // 
+            this.richTextBox2.Location = new System.Drawing.Point(583, 225);
+            this.richTextBox2.Name = "richTextBox2";
+            this.richTextBox2.Size = new System.Drawing.Size(147, 193);
+            this.richTextBox2.TabIndex = 33;
+            this.richTextBox2.Text = "";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(742, 428);
+            this.Controls.Add(this.richTextBox2);
             this.Controls.Add(this.button8);
             this.Controls.Add(this.textBox6);
             this.Controls.Add(this.button7);
@@ -496,6 +507,7 @@
         private System.Windows.Forms.Button button7;
         private System.Windows.Forms.TextBox textBox6;
         private System.Windows.Forms.Button button8;
+        private System.Windows.Forms.RichTextBox richTextBox2;
     }
 }
 
