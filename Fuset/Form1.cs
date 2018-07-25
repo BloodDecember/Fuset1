@@ -181,7 +181,14 @@ namespace Fuset
             string proxy = sqlite_datareader.GetString(0);
             sqlite_datareader.Close();
 
-            return proxy;
+            if (proxy == "")
+            {
+                return " ";
+            }
+            else
+            {
+                return proxy;
+            }
         }
 
         public string data_get_prof(int id_prof)
@@ -202,15 +209,9 @@ namespace Fuset
             if (IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
             {
                 logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
-                try
-                {
-                    logoSRC = logo.GetAttribute("src");
-                }
-                catch (System.NullReferenceException)
-                {
-
-                    return false;
-                }
+                
+                logoSRC = logo.GetAttribute("src");
+                
                 
                 imageURL = new Uri(logoSRC);
                 PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
@@ -512,21 +513,21 @@ namespace Fuset
 
             Action action = () =>
             {
-                //try
-                //{
+                try
+                {
                     spred_BTC = Convert.ToInt32(BTC.Replace(".", ""));
                     spred_RP = Convert.ToInt32(RP);
-                //}
-                //catch (System.FormatException)
-                //{
-                //    spred_BTC = 0;
-                //}
+                }
+                catch (System.FormatException)
+                {
+                    spred_BTC = 0;
+                }
 
-                //if (spred_BTC != 0)
-                //{
+                if (spred_BTC != 0)
+                {
                     DataUpdate(spred_RP, spred_BTC, miss);
                     DataGridUpdate();
-                //}
+                }
             };
 
 
