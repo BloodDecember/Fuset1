@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using HtmlAgilityPack;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
@@ -40,6 +41,46 @@ namespace Fuset
         private SQLiteConnection m_dbConn;
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
+
+        public void update_proxy_list()
+        {
+            m_sqlCmd.CommandText = "DELETE FROM Proxy_list";
+            m_sqlCmd.ExecuteNonQuery();
+
+            HtmlWeb web = new HtmlWeb();
+
+            var htmlDoc = web.Load(@"https://github.com/clarketm/proxy-list/blob/master/proxy-list.txt");
+
+            int id = 0;
+            int id_num = 5;
+            string text;
+            string[] words;
+
+            do
+            {
+                text = htmlDoc.GetElementbyId("LC" + id_num).InnerText;
+
+                if (text.Length > 3)
+                {
+                    words = text.Split(new char[] { ' ' });
+                    UpdateLog2(words[0]);
+
+                    m_sqlCmd.CommandText = "INSERT INTO Proxy_list ('id', 'proxy', 'usage') values ('" + id + "', '" + words[0] + "' , 0)";
+
+                    m_sqlCmd.ExecuteNonQuery();
+
+                    id++;
+                    id_num++;
+                }
+                else
+                {
+                    return;
+                }
+
+
+            } while (id_num <= 400);
+            
+        }
 
         public void proxy_change(int id_prof)
         {
@@ -161,7 +202,16 @@ namespace Fuset
             if (IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
             {
                 logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
-                logoSRC = logo.GetAttribute("src");
+                try
+                {
+                    logoSRC = logo.GetAttribute("src");
+                }
+                catch (System.NullReferenceException)
+                {
+
+                    return false;
+                }
+                
                 imageURL = new Uri(logoSRC);
                 PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
                 logoSRC = Rucaptcha.Recognize(PuthToPicture);
@@ -377,7 +427,7 @@ namespace Fuset
             IWebElement element = null;
             try
             {
-                if (IsElementVisible(driver.FindElement(By.CssSelector(selector))))
+                if (selector.IndexOf(".") == 0 && IsElementVisible(driver.FindElement(By.CssSelector(selector))))
                 {
 
                     element = driver.FindElement(By.CssSelector(selector));
@@ -390,14 +440,14 @@ namespace Fuset
             }
             catch (NoSuchElementException)
             {
-                
+                UpdateLog2(selector + " не CssSelector");
             }
 
             try
             {
-                if (IsElementVisible(driver.FindElement(By.Id(selector))))
+                if (selector.IndexOf("/") == 0 && IsElementVisible(driver.FindElement(By.XPath(selector))))
                 {
-                    element = driver.FindElement(By.Id(selector));
+                    element = driver.FindElement(By.XPath(selector));
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.CssSelector(".large-12.fixed")));
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", element);
 
@@ -411,9 +461,9 @@ namespace Fuset
 
             try
             {
-                if (IsElementVisible(driver.FindElement(By.XPath(selector))))
+                if (IsElementVisible(driver.FindElement(By.Id(selector))))
                 {
-                    element = driver.FindElement(By.XPath(selector));
+                    element = driver.FindElement(By.Id(selector));
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.CssSelector(".large-12.fixed")));
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", element);
 
@@ -527,7 +577,6 @@ namespace Fuset
 
         public async void Step(int i)
         {
-            richTextBox1.Clear();
             miss = 0;
             
             DataGridUpdate();
@@ -547,9 +596,9 @@ namespace Fuset
                 options.AddArguments("--start-maximized");
                 IWebDriver driver = new ChromeDriver(options);
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+                //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
 
-                UpdateLog2(data_get_proxy(i) + " - " + data_get_prof(i));
+                UpdateLog2(data_get_prof(i) + " - " + data_get_proxy(i));
 
                 try
                 {
@@ -633,8 +682,17 @@ namespace Fuset
                 do
                 {
                     if (IsElementVisible(FandS(driver, "switch_captchas_button")))
-                        simple_captcha(driver);
+                        if(!simple_captcha(driver))
+                        {
+                            proxy_change(i);
 
+
+                            timing_list[i] = 10;
+                            driver.Quit();
+                            busy = false;
+                            return;
+                        }
+                            
                     
                     if (IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
                         Rucaptchav2(driver);
@@ -856,9 +914,9 @@ namespace Fuset
 
         private void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            m_sqlCmd.CommandText = "update Proxy_list set usage = 1 where ID=0";
+            update_proxy_list();
 
-            m_sqlCmd.ExecuteNonQuery();
+
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
