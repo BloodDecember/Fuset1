@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +30,6 @@ namespace Fuset
         int spred_RP = 0;
         int Time = 0;
         int miss = 0;
-        bool bad_ip = false;
         bool busy = false;
         IWebElement logo;
         String logoSRC;
@@ -41,6 +41,13 @@ namespace Fuset
         private SQLiteConnection m_dbConn;
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
+
+        public void new_akk()
+        {
+            
+
+            
+        }
 
         public void update_proxy_list()
         {
@@ -56,11 +63,16 @@ namespace Fuset
             string text;
             string[] words;
 
+            Ping ping = new Ping();
+            PingReply pingReply = null;
+
             do
             {
                 text = htmlDoc.GetElementbyId("LC" + id_num).InnerText;
+                words = text.Split(new char[] { ':' });
+                pingReply = ping.Send(words[0]);
 
-                if (text.Length > 3)
+                if (text.Length > 3 && pingReply.Status != IPStatus.TimedOut && pingReply.RoundtripTime < 200)
                 {
                     words = text.Split(new char[] { ' ' });
                     UpdateLog2(words[0]);
@@ -79,7 +91,31 @@ namespace Fuset
 
 
             } while (id_num <= 400);
-            
+
+            //пинг
+
+            //foreach (string server in serversList)
+            //{
+            //    pingReply = ping.Send(server);
+
+            //    if (pingReply.Status != IPStatus.TimedOut)
+            //    {
+            //        tw.WriteLine(server + "\t server"); //server
+            //        tw.WriteLine(pingReply.Address + "\t IP"); //IP
+            //        tw.WriteLine(pingReply.Status + "\t Статус"); //Статус
+            //        tw.WriteLine(pingReply.RoundtripTime + "\t Время ответа"); //Время ответа
+            //        tw.WriteLine(pingReply.Options.Ttl + "\t TTL"); //TTL
+            //        tw.WriteLine(pingReply.Options.DontFragment + "\t Фрагментирование"); //Фрагментирование
+            //        tw.WriteLine(pingReply.Buffer.Length + "\t Размер буфера"); //Размер буфера
+            //        tw.WriteLine();
+            //    }
+            //    else
+            //    {
+            //        tw.WriteLine(server); //server
+            //        tw.WriteLine(pingReply.Status);
+            //        tw.WriteLine();
+            //    }
+            //}
         }
 
         public void proxy_change(int id_prof)
@@ -171,6 +207,35 @@ namespace Fuset
             //UpdateLog(Convert.ToString(timing_list.Count));
         }
 
+        public string data_get_akk(int id_prof)
+        {
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT akk FROM Setting WHERE id = " + id_prof;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+
+            string akk = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
+            
+            return akk;
+        }
+
+        public string data_get_pass(int id_prof)
+        {
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT pass FROM Setting WHERE id = " + id_prof;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+
+            string pass = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
+
+            return pass;
+        }
+
+
         public string data_get_proxy(int id_prof)
         {
             m_sqlCmd = m_dbConn.CreateCommand();
@@ -179,14 +244,21 @@ namespace Fuset
             sqlite_datareader.Read();
 
             string proxy = sqlite_datareader.GetString(0);
-            sqlite_datareader.Close();
 
-            if (proxy == "")
+            if (proxy == " ")
             {
-                return " ";
+                proxy_change(id_prof);
+
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read();
+
+                proxy = sqlite_datareader.GetString(0);
+                sqlite_datareader.Close();
+                return proxy;
             }
             else
             {
+                sqlite_datareader.Close();
                 return proxy;
             }
         }
@@ -208,12 +280,23 @@ namespace Fuset
         {
             if (IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
             {
-                logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
-                
-                logoSRC = logo.GetAttribute("src");
-                
-                
-                imageURL = new Uri(logoSRC);
+                do
+                {   
+                    try
+                    {
+                        logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
+                        logoSRC = logo.GetAttribute("src");
+                        break;
+                    }
+                    catch (System.NullReferenceException)
+                    {
+                        Thread.Sleep(500);
+                        continue;
+                    }
+                } while (true) ;
+
+
+            imageURL = new Uri(logoSRC);
                 PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
                 logoSRC = Rucaptcha.Recognize(PuthToPicture);
 
@@ -349,7 +432,7 @@ namespace Fuset
 
             try
             {
-                sqlQuery = "SELECT * FROM Setting";
+                sqlQuery = "SELECT id, akk, prof, proxy FROM Setting";
                 SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, m_dbConn);
                 adapter.Fill(dTable);
 
@@ -370,33 +453,33 @@ namespace Fuset
         }
 
 
-        public void DataGridUpdate()
-        {
-            DataTable dTable = new DataTable();
-            String sqlQuery;
+        //public void DataGridUpdate()
+        //{
+        //    DataTable dTable = new DataTable();
+        //    String sqlQuery;
 
 
-            try
-            {
-                sqlQuery = "SELECT * FROM Log";
-                SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, m_dbConn);
-                adapter.Fill(dTable);
+        //    try
+        //    {
+        //        sqlQuery = "SELECT * FROM Log";
+        //        SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, m_dbConn);
+        //        adapter.Fill(dTable);
 
-                if (dTable.Rows.Count > 0)
-                {
-                    dataGridView1.Rows.Clear();
+        //        if (dTable.Rows.Count > 0)
+        //        {
+        //            dataGridView1.Rows.Clear();
 
-                    for (int i = dTable.Rows.Count - 1; i >= 0; i--)
-                        dataGridView1.Rows.Add(dTable.Rows[i].ItemArray);
-                }
-                else
-                    UpdateLog("Database is empty");
-            }
-            catch (SQLiteException ex)
-            {
-                UpdateLog("Error: " + ex.Message);
-            }
-        }
+        //            for (int i = dTable.Rows.Count - 1; i >= 0; i--)
+        //                dataGridView1.Rows.Add(dTable.Rows[i].ItemArray);
+        //        }
+        //        else
+        //            UpdateLog("Database is empty");
+        //    }
+        //    catch (SQLiteException ex)
+        //    {
+        //        UpdateLog("Error: " + ex.Message);
+        //    }
+        //}
 
         public void UpdateLog(string s)
         {
@@ -417,6 +500,7 @@ namespace Fuset
             Action action = () =>
             {
                 richTextBox2.AppendText(s + "\n");
+                richTextBox2.ScrollToCaret();
             };
 
             Invoke(action);
@@ -438,6 +522,22 @@ namespace Fuset
                     return element;
                 }
 
+            }
+            catch (OpenQA.Selenium.StaleElementReferenceException)
+            {
+                while (true)
+                {
+                    try
+                    {
+                        Thread.Sleep(500);
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", element);
+                        return element;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
             }
             catch (NoSuchElementException)
             {
@@ -526,7 +626,7 @@ namespace Fuset
                 if (spred_BTC != 0)
                 {
                     DataUpdate(spred_RP, spred_BTC, miss);
-                    DataGridUpdate();
+                    //DataGridUpdate();
                 }
             };
 
@@ -580,7 +680,7 @@ namespace Fuset
         {
             miss = 0;
             
-            DataGridUpdate();
+            //DataGridUpdate();
             await Task.Run(() =>
             {
                 //options.AddArgument("--headless");
@@ -597,7 +697,7 @@ namespace Fuset
                 options.AddArguments("--start-maximized");
                 IWebDriver driver = new ChromeDriver(options);
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
 
                 UpdateLog2(data_get_prof(i) + " - " + data_get_proxy(i));
 
@@ -642,17 +742,28 @@ namespace Fuset
                     return;
                 }
 
-                Thread.Sleep(5000);
+                //Thread.Sleep(5000);
                 if (IsElementVisible(FandS(driver, ".countdown_amount")))
                 {
-                    
-                    timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
-                    
-                    UpdateLog("Кулдаун сбора " + timing_list[i] + " секунд");
+                    while (true)
+                    {
+                        try
+                        {
+                            Thread.Sleep(500);
+                            timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
 
-                    driver.Quit();
-                    busy = false;
-                    return ;
+                            UpdateLog("Кулдаун сбора " + timing_list[i] + " секунд");
+
+                            driver.Quit();
+                            busy = false;
+                            return;
+                        }
+                        catch (System.NullReferenceException)
+                        {
+
+                            continue;
+                        }
+                    }
                 }
 
 
@@ -699,16 +810,31 @@ namespace Fuset
                         Rucaptchav2(driver);
 
                     FandS(driver, "free_play_form_button").Click();
+
                     Thread.Sleep(3000);
+
+                    if (IsElementVisible(FandS(driver, "free_play_error")))
+                    {
+                        timing_list[i] = 310;
+                        driver.Quit();
+                        busy = false;
+                        return;
+                    }
+
+                    driver.Navigate().Refresh();
+                    
+                    
+                    //free_play_error
+
                 }
                 while (IsElementVisible(FandS(driver, "free_play_form_button")));
 
 
                 try
                 {
-                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("winnings")));
+                    //((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("winnings")));
 
-                    calculete(driver.FindElement(By.Id("winnings")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text, miss);
+                    //calculete(driver.FindElement(By.Id("winnings")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text, miss);
                     timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
                 }
 
@@ -832,7 +958,7 @@ namespace Fuset
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Log (id INTEGER PRIMARY KEY AUTOINCREMENT, Время TEXT, RP INTEGER, BTC INTEGER, miss INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Setting (id INTEGER PRIMARY KEY AUTOINCREMENT, akk TEXT, prof TEXT, proxy TEXT)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Setting (id INTEGER PRIMARY KEY AUTOINCREMENT, akk TEXT, prof TEXT, pass TEXT, proxy TEXT)";
                 m_sqlCmd.ExecuteNonQuery();
 
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Proxy_list (id INTEGER PRIMARY KEY AUTOINCREMENT, proxy TEXT, usage BOOL)";
@@ -862,6 +988,13 @@ namespace Fuset
 
         private void button1_Click(object sender, EventArgs e)
         {
+            if (textBox5.Text.Length == 0)
+            {
+                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
+                return;
+            }
+            int i = Convert.ToInt32(textBox5.Text);
+
             options = new ChromeOptions();
             Proxy proxy = new Proxy();
             proxy.Kind = ProxyKind.Manual;
@@ -877,6 +1010,22 @@ namespace Fuset
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
 
             driver.Navigate().GoToUrl("https://freebitco.in/");
+
+            try
+            {
+                driver.FindElement(By.PartialLinkText("LOGIN")).Click();
+                driver.FindElement(By.Id("login_form_btc_address")).SendKeys(data_get_akk(i) + "@mail.ru");
+                driver.FindElement(By.Id("login_form_password")).SendKeys(data_get_pass(i));
+                driver.FindElement(By.Id("login_button")).Click();
+            }
+            catch (OpenQA.Selenium.NoSuchElementException)
+            {
+
+                driver.Quit();
+            }
+
+
+            //login_button
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -887,7 +1036,7 @@ namespace Fuset
         private void button4_Click(object sender, EventArgs e)
         {
             
-            DataGridUpdate();
+            //DataGridUpdate();
         }
 
         private void button5_Click(object sender, EventArgs e)
@@ -915,11 +1064,45 @@ namespace Fuset
 
         private void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            update_proxy_list();
+            if (textBox5.Text.Length == 0)
+            {
+                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
+                return;
+            }
+            int i = Convert.ToInt32(textBox5.Text);
+
+            //options.AddArgument("--headless");
+            options = new ChromeOptions();
+            Proxy proxy = new Proxy();
+            proxy.Kind = ProxyKind.Manual;
+            proxy.IsAutoDetect = false;
+
+            proxy.HttpProxy = data_get_proxy(i);
+            proxy.SslProxy = data_get_proxy(i);
+            options.Proxy = proxy;
+            options.AddArgument("ignore-certificate-errors");
+
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
+            options.AddArguments("--start-maximized");
+            IWebDriver driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+            
+            driver.Navigate().GoToUrl("https://myaccount.google.com/");
+
+            driver.FindElement(By.XPath("//*[@id='yDmH0d']/div[2]/c-wiz/div/div/div[5]/div[2]/c-wiz/div/div[1]/div/div[4]/div/a[2]")).Click();
 
 
+            driver.FindElement(By.Id("firstName")).SendKeys(data_get_akk(i));
+            driver.FindElement(By.Id("lastName")).SendKeys(data_get_akk(i));
+            driver.FindElement(By.Id("username")).SendKeys(data_get_akk(i));
+            driver.FindElement(By.XPath("//*[@id='passwd']/div[1]/div/div[1]/input")).SendKeys(data_get_pass(i));
+            driver.FindElement(By.XPath("//*[@id='confirm-passwd']/div[1]/div/div[1]/input")).SendKeys(data_get_pass(i));
+            driver.FindElement(By.Id("accountDetailsNext")).Click();
+            driver.FindElement(By.Id("phoneNumberId")).SendKeys("333324336");
+            driver.FindElement(By.Id("gradsIdvPhoneNext")).Click();
         }
-
+        //gradsIdvPhoneNext
         private void button7_Click(object sender, EventArgs e)//обновление
         {
             DataGridUpdate1();
