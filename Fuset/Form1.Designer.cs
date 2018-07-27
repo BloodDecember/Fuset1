@@ -45,24 +45,17 @@
             this.менюToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.настройкиToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.button4 = new System.Windows.Forms.Button();
-            this.textBox2 = new System.Windows.Forms.TextBox();
             this.dataGridView2 = new System.Windows.Forms.DataGridView();
-            this.textBox3 = new System.Windows.Forms.TextBox();
-            this.textBox4 = new System.Windows.Forms.TextBox();
-            this.button5 = new System.Windows.Forms.Button();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.textBox5 = new System.Windows.Forms.TextBox();
-            this.button6 = new System.Windows.Forms.Button();
-            this.button7 = new System.Windows.Forms.Button();
-            this.textBox6 = new System.Windows.Forms.TextBox();
-            this.button8 = new System.Windows.Forms.Button();
-            this.richTextBox2 = new System.Windows.Forms.RichTextBox();
             this.Column6 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column7 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column8 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column9 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.textBox5 = new System.Windows.Forms.TextBox();
+            this.button6 = new System.Windows.Forms.Button();
+            this.button7 = new System.Windows.Forms.Button();
+            this.richTextBox2 = new System.Windows.Forms.RichTextBox();
+            this.форматСпискаПрофилейToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.button5 = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
             this.SuspendLayout();
@@ -98,9 +91,9 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(477, 91);
+            this.button2.Location = new System.Drawing.Point(415, 73);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(113, 23);
+            this.button2.Size = new System.Drawing.Size(108, 23);
             this.button2.TabIndex = 4;
             this.button2.Text = "Проверка прокси";
             this.button2.UseVisualStyleBackColor = true;
@@ -152,9 +145,9 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(574, 154);
+            this.button1.Location = new System.Drawing.Point(415, 102);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.Size = new System.Drawing.Size(108, 23);
             this.button1.TabIndex = 15;
             this.button1.Text = "Залогиниться";
             this.button1.UseVisualStyleBackColor = true;
@@ -190,6 +183,8 @@
             // 
             // менюToolStripMenuItem
             // 
+            this.менюToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.форматСпискаПрофилейToolStripMenuItem});
             this.менюToolStripMenuItem.Name = "менюToolStripMenuItem";
             this.менюToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             this.менюToolStripMenuItem.Text = "Меню";
@@ -210,13 +205,6 @@
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
-            // textBox2
-            // 
-            this.textBox2.Location = new System.Drawing.Point(46, 40);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(95, 20);
-            this.textBox2.TabIndex = 20;
-            // 
             // dataGridView2
             // 
             this.dataGridView2.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -225,114 +213,10 @@
             this.Column7,
             this.Column8,
             this.Column9});
-            this.dataGridView2.Location = new System.Drawing.Point(13, 65);
+            this.dataGridView2.Location = new System.Drawing.Point(13, 27);
             this.dataGridView2.Name = "dataGridView2";
-            this.dataGridView2.Size = new System.Drawing.Size(395, 286);
+            this.dataGridView2.Size = new System.Drawing.Size(395, 324);
             this.dataGridView2.TabIndex = 21;
-            // 
-            // textBox3
-            // 
-            this.textBox3.Location = new System.Drawing.Point(147, 39);
-            this.textBox3.Name = "textBox3";
-            this.textBox3.Size = new System.Drawing.Size(114, 20);
-            this.textBox3.TabIndex = 22;
-            // 
-            // textBox4
-            // 
-            this.textBox4.Location = new System.Drawing.Point(267, 39);
-            this.textBox4.Name = "textBox4";
-            this.textBox4.Size = new System.Drawing.Size(74, 20);
-            this.textBox4.TabIndex = 23;
-            // 
-            // button5
-            // 
-            this.button5.Location = new System.Drawing.Point(348, 36);
-            this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(78, 23);
-            this.button5.TabIndex = 24;
-            this.button5.Text = "Добавить";
-            this.button5.UseVisualStyleBackColor = true;
-            this.button5.Click += new System.EventHandler(this.button5_Click);
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(43, 24);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(48, 13);
-            this.label3.TabIndex = 25;
-            this.label3.Text = "Аккаунт";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(144, 24);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(53, 13);
-            this.label4.TabIndex = 26;
-            this.label4.Text = "Профиль";
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(264, 24);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(45, 13);
-            this.label5.TabIndex = 27;
-            this.label5.Text = "Прокси";
-            // 
-            // textBox5
-            // 
-            this.textBox5.Location = new System.Drawing.Point(504, 65);
-            this.textBox5.Name = "textBox5";
-            this.textBox5.Size = new System.Drawing.Size(58, 20);
-            this.textBox5.TabIndex = 28;
-            this.textBox5.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            // 
-            // button6
-            // 
-            this.button6.Location = new System.Drawing.Point(574, 193);
-            this.button6.Name = "button6";
-            this.button6.Size = new System.Drawing.Size(75, 23);
-            this.button6.TabIndex = 29;
-            this.button6.Text = "тест";
-            this.button6.UseVisualStyleBackColor = true;
-            this.button6.Click += new System.EventHandler(this.button6_Click);
-            // 
-            // button7
-            // 
-            this.button7.Location = new System.Drawing.Point(432, 36);
-            this.button7.Name = "button7";
-            this.button7.Size = new System.Drawing.Size(78, 23);
-            this.button7.TabIndex = 30;
-            this.button7.Text = "Обновить";
-            this.button7.UseVisualStyleBackColor = true;
-            this.button7.Click += new System.EventHandler(this.button7_Click);
-            // 
-            // textBox6
-            // 
-            this.textBox6.Location = new System.Drawing.Point(12, 40);
-            this.textBox6.Name = "textBox6";
-            this.textBox6.Size = new System.Drawing.Size(28, 20);
-            this.textBox6.TabIndex = 31;
-            // 
-            // button8
-            // 
-            this.button8.Location = new System.Drawing.Point(516, 36);
-            this.button8.Name = "button8";
-            this.button8.Size = new System.Drawing.Size(78, 23);
-            this.button8.TabIndex = 32;
-            this.button8.Text = "Удалить";
-            this.button8.UseVisualStyleBackColor = true;
-            this.button8.Click += new System.EventHandler(this.button8_Click);
-            // 
-            // richTextBox2
-            // 
-            this.richTextBox2.Location = new System.Drawing.Point(583, 225);
-            this.richTextBox2.Name = "richTextBox2";
-            this.richTextBox2.Size = new System.Drawing.Size(147, 193);
-            this.richTextBox2.TabIndex = 33;
-            this.richTextBox2.Text = "";
             // 
             // Column6
             // 
@@ -355,25 +239,70 @@
             this.Column9.HeaderText = "Прокси";
             this.Column9.Name = "Column9";
             // 
+            // textBox5
+            // 
+            this.textBox5.Location = new System.Drawing.Point(441, 51);
+            this.textBox5.Name = "textBox5";
+            this.textBox5.Size = new System.Drawing.Size(58, 20);
+            this.textBox5.TabIndex = 28;
+            this.textBox5.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            // 
+            // button6
+            // 
+            this.button6.Location = new System.Drawing.Point(574, 193);
+            this.button6.Name = "button6";
+            this.button6.Size = new System.Drawing.Size(75, 23);
+            this.button6.TabIndex = 29;
+            this.button6.Text = "тест";
+            this.button6.UseVisualStyleBackColor = true;
+            this.button6.Click += new System.EventHandler(this.button6_Click);
+            // 
+            // button7
+            // 
+            this.button7.Location = new System.Drawing.Point(415, 27);
+            this.button7.Name = "button7";
+            this.button7.Size = new System.Drawing.Size(108, 23);
+            this.button7.TabIndex = 30;
+            this.button7.Text = "Обновить";
+            this.button7.UseVisualStyleBackColor = true;
+            this.button7.Click += new System.EventHandler(this.button7_Click);
+            // 
+            // richTextBox2
+            // 
+            this.richTextBox2.Location = new System.Drawing.Point(568, 225);
+            this.richTextBox2.Name = "richTextBox2";
+            this.richTextBox2.Size = new System.Drawing.Size(162, 193);
+            this.richTextBox2.TabIndex = 33;
+            this.richTextBox2.Text = "";
+            // 
+            // форматСпискаПрофилейToolStripMenuItem
+            // 
+            this.форматСпискаПрофилейToolStripMenuItem.Name = "форматСпискаПрофилейToolStripMenuItem";
+            this.форматСпискаПрофилейToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
+            this.форматСпискаПрофилейToolStripMenuItem.Text = "Формат списка профилей";
+            this.форматСпискаПрофилейToolStripMenuItem.Click += new System.EventHandler(this.форматСпискаПрофилейToolStripMenuItem_Click);
+            // 
+            // button5
+            // 
+            this.button5.Location = new System.Drawing.Point(415, 131);
+            this.button5.Name = "button5";
+            this.button5.Size = new System.Drawing.Size(108, 23);
+            this.button5.TabIndex = 34;
+            this.button5.Text = "Обновить прокси";
+            this.button5.UseVisualStyleBackColor = true;
+            this.button5.Click += new System.EventHandler(this.button5_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(742, 428);
+            this.Controls.Add(this.button5);
             this.Controls.Add(this.richTextBox2);
-            this.Controls.Add(this.button8);
-            this.Controls.Add(this.textBox6);
             this.Controls.Add(this.button7);
             this.Controls.Add(this.button6);
             this.Controls.Add(this.textBox5);
-            this.Controls.Add(this.label5);
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.button5);
-            this.Controls.Add(this.textBox4);
-            this.Controls.Add(this.textBox3);
             this.Controls.Add(this.dataGridView2);
-            this.Controls.Add(this.textBox2);
             this.Controls.Add(this.button4);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.textBox1);
@@ -421,24 +350,17 @@
         private System.Windows.Forms.ToolStripMenuItem менюToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem настройкиToolStripMenuItem;
         private System.Windows.Forms.Button button4;
-        private System.Windows.Forms.TextBox textBox2;
         private System.Windows.Forms.DataGridView dataGridView2;
-        private System.Windows.Forms.TextBox textBox3;
-        private System.Windows.Forms.TextBox textBox4;
-        private System.Windows.Forms.Button button5;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label5;
         private System.Windows.Forms.TextBox textBox5;
         private System.Windows.Forms.Button button6;
         private System.Windows.Forms.Button button7;
-        private System.Windows.Forms.TextBox textBox6;
-        private System.Windows.Forms.Button button8;
         private System.Windows.Forms.RichTextBox richTextBox2;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column6;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column7;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column8;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column9;
+        private System.Windows.Forms.ToolStripMenuItem форматСпискаПрофилейToolStripMenuItem;
+        private System.Windows.Forms.Button button5;
     }
 }
 

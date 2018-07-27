@@ -42,15 +42,29 @@ namespace Fuset
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
 
-        public void new_akk()
+        public void add_good_proxy(string proxy)
         {
-            
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT id FROM Proxy_list WHERE proxy ='" + proxy + "'";
+            try
+            {
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read(); //sqlite_datareader.GetInt32(0)
+                sqlite_datareader.GetInt32(0);
+                sqlite_datareader.Close();
+            }
+            catch (System.InvalidOperationException)
+            {
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "INSERT INTO Proxy_list ( 'proxy', 'usage') values ( '" + proxy + "' , 0)";
 
-            
+                m_sqlCmd.ExecuteNonQuery();
+            }
         }
 
         public void update_proxy_list()
         {
+            m_sqlCmd = m_dbConn.CreateCommand();
             m_sqlCmd.CommandText = "DELETE FROM Proxy_list";
             m_sqlCmd.ExecuteNonQuery();
 
@@ -77,7 +91,7 @@ namespace Fuset
                     words = text.Split(new char[] { ' ' });
                     UpdateLog2(words[0]);
 
-                    m_sqlCmd.CommandText = "INSERT INTO Proxy_list ('id', 'proxy', 'usage') values ('" + id + "', '" + words[0] + "' , 0)";
+                    m_sqlCmd.CommandText = "INSERT INTO Proxy_list ( 'proxy', 'usage') values ( '" + words[0] + "' , 0)";
 
                     m_sqlCmd.ExecuteNonQuery();
 
@@ -192,6 +206,8 @@ namespace Fuset
             m_sqlCmd.CommandText = @"SELECT id FROM Setting";
             m_sqlCmd.CommandType = CommandType.Text;
             SQLiteDataReader reader = m_sqlCmd.ExecuteReader();
+
+          
 
             while (reader.Read()) // построчно считываем данные
             {
@@ -440,7 +456,7 @@ namespace Fuset
                 {
                     dataGridView2.Rows.Clear();
 
-                    for (int i = dTable.Rows.Count - 1; i >= 0; i--)
+                    for (int i = 0; i < dTable.Rows.Count; i++)
                         dataGridView2.Rows.Add(dTable.Rows[i].ItemArray);
                 }
                 else
@@ -541,7 +557,7 @@ namespace Fuset
             }
             catch (NoSuchElementException)
             {
-                UpdateLog2(selector + " не CssSelector");
+                //UpdateLog2(selector + " не CssSelector");
             }
 
             try
@@ -557,7 +573,7 @@ namespace Fuset
             }
             catch (NoSuchElementException)
             {
-
+                
             }
 
             try
@@ -704,9 +720,13 @@ namespace Fuset
                 try
                 {
                     driver.Navigate().GoToUrl("https://freebitco.in/");
+
+                    
                 }
                 catch (Exception)
                 {
+                    
+
                     proxy_change(i);
 
 
@@ -718,6 +738,15 @@ namespace Fuset
 
                 if (!IsElementVisible(FandS(driver, "deposit_withdraw_container")))
                 {
+                    if (IsElementVisible(FandS(driver, ".error-code")).ToString() == "ERR_PROXY_CONNECTION_FAILED")//error-code
+                    {
+                        do
+                        {
+                            driver.Navigate().GoToUrl("https://freebitco.in/");
+                        } while (IsElementVisible(FandS(driver, ".error-code")).ToString() == "ERR_PROXY_CONNECTION_FAILED");
+                    }
+
+
                     proxy_change(i);
 
 
@@ -743,9 +772,7 @@ namespace Fuset
                 }
 
                 //Thread.Sleep(5000);
-                if (IsElementVisible(FandS(driver, ".countdown_amount")))
-                {
-                    while (true)
+                    if (IsElementVisible(FandS(driver, ".countdown_amount")))
                     {
                         try
                         {
@@ -754,6 +781,7 @@ namespace Fuset
 
                             UpdateLog("Кулдаун сбора " + timing_list[i] + " секунд");
 
+                            add_good_proxy(data_get_proxy(i));
                             driver.Quit();
                             busy = false;
                             return;
@@ -761,28 +789,9 @@ namespace Fuset
                         catch (System.NullReferenceException)
                         {
 
-                            continue;
+                            
                         }
                     }
-                }
-
-
-                try
-                {
-                    driver.Navigate().Refresh();
-                }
-                catch (Exception)
-                {
-
-                    proxy_change(i);
-
-
-                    timing_list[i] = 10;
-                    driver.Quit();
-                    busy = false;
-                    return;
-                }
-
 
 //Активация бонусов
                 bonus(driver);
@@ -811,20 +820,24 @@ namespace Fuset
 
                     FandS(driver, "free_play_form_button").Click();
 
-                    Thread.Sleep(3000);
-
-                    if (IsElementVisible(FandS(driver, "free_play_error")))
+                    Thread.Sleep(10000);
+                    //free_play_error
+                    if (IsElementVisible(FandS(driver, "same_ip_error")) || IsElementVisible(FandS(driver, "free_play_error")))
                     {
-                        timing_list[i] = 310;
+                        proxy_change(i);
+
+
+                        timing_list[i] = 10;
                         driver.Quit();
                         busy = false;
                         return;
                     }
 
+
                     driver.Navigate().Refresh();
                     
                     
-                    //free_play_error
+                    
 
                 }
                 while (IsElementVisible(FandS(driver, "free_play_form_button")));
@@ -843,12 +856,45 @@ namespace Fuset
 
                 }
 
+                add_good_proxy(data_get_proxy(i));
+                driver.Quit();
+                busy = false;
+
+            });
+        }
+
+        public async void Step2(int i)
+        {
+            await Task.Run(() =>
+            {
+                //options.AddArgument("--headless");
+                options = new ChromeOptions();
+                Proxy proxy = new Proxy();
+                proxy.Kind = ProxyKind.Manual;
+                proxy.IsAutoDetect = false;
+                proxy.HttpProxy = data_get_proxy(i);
+                proxy.SslProxy = data_get_proxy(i);
+                options.Proxy = proxy;
+                options.AddArgument("ignore-certificate-errors");
+
+                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
+                options.AddArguments("--start-maximized");
+                IWebDriver driver = new ChromeDriver(options);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+
+                UpdateLog2(data_get_prof(i) + " - " + data_get_proxy(i));
+                
+                driver.Navigate().GoToUrl("https://freebitco.in/");
+
+                
                 
                 driver.Quit();
                 busy = false;
 
             });
         }
+
 
         public Form1()
         {
@@ -880,7 +926,11 @@ namespace Fuset
 
         private void button2_Click(object sender, EventArgs e)
         {
-
+            if (textBox5.Text.Length == 0)
+            {
+                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
+                return;
+            }
 
 
             options = new ChromeOptions();
@@ -941,7 +991,6 @@ namespace Fuset
         {
             listBox1.SetSelected(0, true);
 
-            
 
             m_dbConn = new SQLiteConnection();
             m_sqlCmd = new SQLiteCommand();
@@ -955,13 +1004,13 @@ namespace Fuset
                 m_dbConn.Open();
                 m_sqlCmd.Connection = m_dbConn;
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Log (id INTEGER PRIMARY KEY AUTOINCREMENT, Время TEXT, RP INTEGER, BTC INTEGER, miss INTEGER)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Log (id INTEGER PRIMARY KEY , Время TEXT, RP INTEGER, BTC INTEGER, miss INTEGER)"; //AUTOINCREMENT
                 m_sqlCmd.ExecuteNonQuery();
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Setting (id INTEGER PRIMARY KEY AUTOINCREMENT, akk TEXT, prof TEXT, pass TEXT, proxy TEXT)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Setting (id INTEGER PRIMARY KEY , akk TEXT, prof TEXT, pass TEXT, proxy TEXT)";
                 m_sqlCmd.ExecuteNonQuery();
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Proxy_list (id INTEGER PRIMARY KEY AUTOINCREMENT, proxy TEXT, usage BOOL)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Proxy_list (id INTEGER PRIMARY KEY, proxy TEXT, usage BOOL)";
                 m_sqlCmd.ExecuteNonQuery();
 
 
@@ -984,6 +1033,8 @@ namespace Fuset
 
             Rucaptcha.Key = textBox1.Text;
             get_timing_list();
+
+            
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -1039,28 +1090,28 @@ namespace Fuset
             //DataGridUpdate();
         }
 
-        private void button5_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                m_sqlCmd.CommandText = "INSERT INTO Setting (id, 'akk', 'prof', 'proxy') values ('" + Convert.ToInt32(textBox6.Text) + "' , '" + textBox2.Text + "' , '" + textBox3.Text + "' , '" + textBox4.Text + "')";
+        //private void button5_Click(object sender, EventArgs e)
+        //{
+        //    try
+        //    {
+        //        m_sqlCmd.CommandText = "INSERT INTO Setting (id, 'akk', 'prof', 'proxy') values ('" + Convert.ToInt32(textBox6.Text) + "' , '" + textBox2.Text + "' , '" + textBox3.Text + "' , '" + textBox4.Text + "')";
 
 
-                m_sqlCmd.ExecuteNonQuery();
-            }
-            catch (SQLiteException ex)
-            {
-                UpdateLog("Error: " + ex.Message);
-            }
+        //        m_sqlCmd.ExecuteNonQuery();
+        //    }
+        //    catch (SQLiteException ex)
+        //    {
+        //        UpdateLog("Error: " + ex.Message);
+        //    }
 
-            DataGridUpdate1();
-            textBox2.Clear();
-            textBox3.Clear();
-            textBox4.Clear();
-            textBox6.Clear();
+        //    DataGridUpdate1();
+        //    textBox2.Clear();
+        //    textBox3.Clear();
+        //    textBox4.Clear();
+        //    textBox6.Clear();
 
-            get_timing_list();
-        }
+        //    get_timing_list();
+        //}
 
         private void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
@@ -1071,12 +1122,10 @@ namespace Fuset
             }
             int i = Convert.ToInt32(textBox5.Text);
 
-            //options.AddArgument("--headless");
             options = new ChromeOptions();
             Proxy proxy = new Proxy();
             proxy.Kind = ProxyKind.Manual;
             proxy.IsAutoDetect = false;
-
             proxy.HttpProxy = data_get_proxy(i);
             proxy.SslProxy = data_get_proxy(i);
             options.Proxy = proxy;
@@ -1087,34 +1136,53 @@ namespace Fuset
             IWebDriver driver = new ChromeDriver(options);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
             driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-            
-            driver.Navigate().GoToUrl("https://myaccount.google.com/");
 
-            driver.FindElement(By.XPath("//*[@id='yDmH0d']/div[2]/c-wiz/div/div/div[5]/div[2]/c-wiz/div/div[1]/div/div[4]/div/a[2]")).Click();
+            driver.Navigate().GoToUrl("https://freebitco.in/");
 
+            if (!IsElementVisible(FandS(driver, "deposit_withdraw_container")))
+            {
+                //UpdateLog2(driver.FindElement(By.CssSelector(".error-code")).Text);//ERR_CONNECTION_TIMED_OUT ERR_PROXY_CONNECTION_FAILED
 
-            driver.FindElement(By.Id("firstName")).SendKeys(data_get_akk(i));
-            driver.FindElement(By.Id("lastName")).SendKeys(data_get_akk(i));
-            driver.FindElement(By.Id("username")).SendKeys(data_get_akk(i));
-            driver.FindElement(By.XPath("//*[@id='passwd']/div[1]/div/div[1]/input")).SendKeys(data_get_pass(i));
-            driver.FindElement(By.XPath("//*[@id='confirm-passwd']/div[1]/div/div[1]/input")).SendKeys(data_get_pass(i));
-            driver.FindElement(By.Id("accountDetailsNext")).Click();
-            driver.FindElement(By.Id("phoneNumberId")).SendKeys("333324336");
-            driver.FindElement(By.Id("gradsIdvPhoneNext")).Click();
+                switch (driver.FindElement(By.CssSelector(".error-code")).Text)
+                {
+                    case "ERR_CONNECTION_TIMED_OUT":
+                        UpdateLog2("ERR_CONNECTION_TIMED_OUT");
+                        break;
+                    case "ERR_PROXY_CONNECTION_FAILED":
+                        UpdateLog2("ERR_PROXY_CONNECTION_FAILED");
+                        break;
+                    default:
+                        break;
+                }
+
+                driver.Quit();
+                
+
+            }
+            else
+            {
+                UpdateLog2("Загрузилась");
+                driver.Quit();
+            }
+
         }
-        //gradsIdvPhoneNext
-        private void button7_Click(object sender, EventArgs e)//обновление
+            //gradsIdvPhoneNext
+            private void button7_Click(object sender, EventArgs e)//обновление
         {
             DataGridUpdate1();
         }
 
-        private void button8_Click(object sender, EventArgs e)//уделение строки из сеттингов по ид
+        
+        private void форматСпискаПрофилейToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            Setting_format Setting_format = new Setting_format();
 
-            m_sqlCmd.CommandText = "DELETE FROM Setting WHERE id=" + Convert.ToInt32(textBox6.Text) + "";
-            m_sqlCmd.ExecuteNonQuery();
-            DataGridUpdate1();
-            get_timing_list();
+            Setting_format.Show();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            update_proxy_list();
         }
     }
 }
