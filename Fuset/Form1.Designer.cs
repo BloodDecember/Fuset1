@@ -30,7 +30,6 @@
         {
             this.components = new System.ComponentModel.Container();
             this.Go = new System.Windows.Forms.Button();
-            this.listBox1 = new System.Windows.Forms.ListBox();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.button2 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
@@ -43,6 +42,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.менюToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.форматСпискаПрофилейToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.настройкиToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.button4 = new System.Windows.Forms.Button();
             this.dataGridView2 = new System.Windows.Forms.DataGridView();
@@ -54,7 +54,6 @@
             this.button6 = new System.Windows.Forms.Button();
             this.button7 = new System.Windows.Forms.Button();
             this.richTextBox2 = new System.Windows.Forms.RichTextBox();
-            this.форматСпискаПрофилейToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.button5 = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
@@ -62,30 +61,19 @@
             // 
             // Go
             // 
-            this.Go.Location = new System.Drawing.Point(655, 154);
+            this.Go.Location = new System.Drawing.Point(529, 27);
             this.Go.Name = "Go";
-            this.Go.Size = new System.Drawing.Size(75, 65);
+            this.Go.Size = new System.Drawing.Size(75, 69);
             this.Go.TabIndex = 0;
             this.Go.Text = "Паихали!";
             this.Go.UseVisualStyleBackColor = true;
             this.Go.Click += new System.EventHandler(this.Go_Click);
             // 
-            // listBox1
-            // 
-            this.listBox1.FormattingEnabled = true;
-            this.listBox1.Items.AddRange(new object[] {
-            "Freebitco.in"});
-            this.listBox1.Location = new System.Drawing.Point(610, 27);
-            this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(120, 121);
-            this.listBox1.TabIndex = 1;
-            this.listBox1.SelectedIndexChanged += new System.EventHandler(this.listBox1_SelectedIndexChanged_1);
-            // 
             // richTextBox1
             // 
-            this.richTextBox1.Location = new System.Drawing.Point(415, 225);
+            this.richTextBox1.Location = new System.Drawing.Point(610, 26);
             this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.Size = new System.Drawing.Size(147, 193);
+            this.richTextBox1.Size = new System.Drawing.Size(120, 193);
             this.richTextBox1.TabIndex = 2;
             this.richTextBox1.Text = "";
             // 
@@ -101,7 +89,7 @@
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(301, 395);
+            this.button3.Location = new System.Drawing.Point(655, 251);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(75, 23);
             this.button3.TabIndex = 6;
@@ -126,7 +114,7 @@
             // checkBox1
             // 
             this.checkBox1.AutoSize = true;
-            this.checkBox1.Location = new System.Drawing.Point(432, 174);
+            this.checkBox1.Location = new System.Drawing.Point(414, 156);
             this.checkBox1.Name = "checkBox1";
             this.checkBox1.Size = new System.Drawing.Size(130, 17);
             this.checkBox1.TabIndex = 13;
@@ -136,7 +124,7 @@
             // checkBox2
             // 
             this.checkBox2.AutoSize = true;
-            this.checkBox2.Location = new System.Drawing.Point(432, 197);
+            this.checkBox2.Location = new System.Drawing.Point(414, 179);
             this.checkBox2.Name = "checkBox2";
             this.checkBox2.Size = new System.Drawing.Size(136, 17);
             this.checkBox2.TabIndex = 14;
@@ -155,16 +143,15 @@
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(95, 369);
+            this.textBox1.Location = new System.Drawing.Point(415, 225);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(281, 20);
+            this.textBox1.Size = new System.Drawing.Size(315, 20);
             this.textBox1.TabIndex = 16;
-            this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(13, 372);
+            this.label1.Location = new System.Drawing.Point(414, 209);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(76, 13);
             this.label1.TabIndex = 17;
@@ -186,18 +173,25 @@
             this.менюToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.форматСпискаПрофилейToolStripMenuItem});
             this.менюToolStripMenuItem.Name = "менюToolStripMenuItem";
-            this.менюToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
+            this.менюToolStripMenuItem.Size = new System.Drawing.Size(53, 20);
             this.менюToolStripMenuItem.Text = "Меню";
+            // 
+            // форматСпискаПрофилейToolStripMenuItem
+            // 
+            this.форматСпискаПрофилейToolStripMenuItem.Name = "форматСпискаПрофилейToolStripMenuItem";
+            this.форматСпискаПрофилейToolStripMenuItem.Size = new System.Drawing.Size(218, 22);
+            this.форматСпискаПрофилейToolStripMenuItem.Text = "Формат списка профилей";
+            this.форматСпискаПрофилейToolStripMenuItem.Click += new System.EventHandler(this.форматСпискаПрофилейToolStripMenuItem_Click);
             // 
             // настройкиToolStripMenuItem
             // 
             this.настройкиToolStripMenuItem.Name = "настройкиToolStripMenuItem";
-            this.настройкиToolStripMenuItem.Size = new System.Drawing.Size(73, 20);
+            this.настройкиToolStripMenuItem.Size = new System.Drawing.Size(79, 20);
             this.настройкиToolStripMenuItem.Text = "Настройки";
             // 
             // button4
             // 
-            this.button4.Location = new System.Drawing.Point(16, 395);
+            this.button4.Location = new System.Drawing.Point(415, 251);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(75, 23);
             this.button4.TabIndex = 19;
@@ -249,7 +243,7 @@
             // 
             // button6
             // 
-            this.button6.Location = new System.Drawing.Point(574, 193);
+            this.button6.Location = new System.Drawing.Point(529, 102);
             this.button6.Name = "button6";
             this.button6.Size = new System.Drawing.Size(75, 23);
             this.button6.TabIndex = 29;
@@ -269,18 +263,11 @@
             // 
             // richTextBox2
             // 
-            this.richTextBox2.Location = new System.Drawing.Point(568, 225);
+            this.richTextBox2.Location = new System.Drawing.Point(12, 357);
             this.richTextBox2.Name = "richTextBox2";
-            this.richTextBox2.Size = new System.Drawing.Size(162, 193);
+            this.richTextBox2.Size = new System.Drawing.Size(717, 129);
             this.richTextBox2.TabIndex = 33;
             this.richTextBox2.Text = "";
-            // 
-            // форматСпискаПрофилейToolStripMenuItem
-            // 
-            this.форматСпискаПрофилейToolStripMenuItem.Name = "форматСпискаПрофилейToolStripMenuItem";
-            this.форматСпискаПрофилейToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
-            this.форматСпискаПрофилейToolStripMenuItem.Text = "Формат списка профилей";
-            this.форматСпискаПрофилейToolStripMenuItem.Click += new System.EventHandler(this.форматСпискаПрофилейToolStripMenuItem_Click);
             // 
             // button5
             // 
@@ -296,7 +283,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(742, 428);
+            this.ClientSize = new System.Drawing.Size(742, 498);
             this.Controls.Add(this.button5);
             this.Controls.Add(this.richTextBox2);
             this.Controls.Add(this.button7);
@@ -313,7 +300,6 @@
             this.Controls.Add(this.button3);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.richTextBox1);
-            this.Controls.Add(this.listBox1);
             this.Controls.Add(this.Go);
             this.Controls.Add(this.menuStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -335,7 +321,6 @@
         #endregion
 
         private System.Windows.Forms.Button Go;
-        private System.Windows.Forms.ListBox listBox1;
         private System.Windows.Forms.RichTextBox richTextBox1;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Button button3;

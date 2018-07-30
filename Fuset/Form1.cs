@@ -64,15 +64,15 @@ namespace Fuset
 
         public void update_proxy_list()
         {
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "DELETE FROM Proxy_list";
-            m_sqlCmd.ExecuteNonQuery();
+            //m_sqlCmd = m_dbConn.CreateCommand();
+            //m_sqlCmd.CommandText = "DELETE FROM Proxy_list";
+            //m_sqlCmd.ExecuteNonQuery();
 
             HtmlWeb web = new HtmlWeb();
 
             var htmlDoc = web.Load(@"https://github.com/clarketm/proxy-list/blob/master/proxy-list.txt");
 
-            int id = 0;
+            //int id = 0;
             int id_num = 5;
             string text;
             string[] words;
@@ -91,11 +91,13 @@ namespace Fuset
                     words = text.Split(new char[] { ' ' });
                     UpdateLog2(words[0]);
 
-                    m_sqlCmd.CommandText = "INSERT INTO Proxy_list ( 'proxy', 'usage') values ( '" + words[0] + "' , 0)";
+                    add_good_proxy(words[0]);
 
-                    m_sqlCmd.ExecuteNonQuery();
+                    //m_sqlCmd.CommandText = "INSERT INTO Proxy_list ( 'proxy', 'usage') values ( '" + words[0] + "' , 0)";
 
-                    id++;
+                    //m_sqlCmd.ExecuteNonQuery();
+
+                    //id++;
                     id_num++;
                 }
                 else
@@ -134,21 +136,21 @@ namespace Fuset
 
         public void proxy_change(int id_prof)
         {
-            int id_proxy = 0;
+            int id_proxy = 1;
             string new_proxy;
-            bool usage;
+            int usage;
 
             m_sqlCmd = m_dbConn.CreateCommand();
             m_sqlCmd.CommandText = "SELECT usage FROM Proxy_list WHERE id = " + id_proxy;
             sqlite_datareader = m_sqlCmd.ExecuteReader();
             sqlite_datareader.Read();
-            usage = Convert.ToBoolean(sqlite_datareader.GetBoolean(0));
+            usage = sqlite_datareader.GetInt32(0);
 
             sqlite_datareader.Close();
 
             UpdateLog2("id_proxy - " + id_proxy + usage);
 
-            while (usage)
+            while (usage != 0)
             {
                 id_proxy++;
 
@@ -156,13 +158,13 @@ namespace Fuset
                 m_sqlCmd.CommandText = "SELECT usage FROM Proxy_list WHERE id = " + id_proxy;
                 sqlite_datareader = m_sqlCmd.ExecuteReader();
                 sqlite_datareader.Read();
-                usage = Convert.ToBoolean(sqlite_datareader.GetBoolean(0));
+                usage = sqlite_datareader.GetInt32(0);
 
                 sqlite_datareader.Close();
                 UpdateLog2("while_id_proxy - " + id_proxy + usage);
             }
 
-            if (!usage)
+            if (usage == 0)
             {
                 m_sqlCmd = m_dbConn.CreateCommand();
                 m_sqlCmd.CommandText = "SELECT proxy FROM Proxy_list WHERE id = " + id_proxy;
@@ -250,8 +252,7 @@ namespace Fuset
 
             return pass;
         }
-
-
+        
         public string data_get_proxy(int id_prof)
         {
             m_sqlCmd = m_dbConn.CreateCommand();
@@ -378,9 +379,6 @@ namespace Fuset
             }
             
             return false;
-
-
-
         }
 
         public void Rucaptchav2(IWebDriver driver)
@@ -390,17 +388,17 @@ namespace Fuset
 
             ((IJavaScriptExecutor)driver).ExecuteScript("window.open()");
             driver.SwitchTo().Window(driver.WindowHandles.Last());
-            driver.Navigate().GoToUrl("http://rucaptcha.com/in.php?key=50e9fba39de714daa84c59e34ad638b2&method=userrecaptcha&googlekey=6LeGfGIUAAAAAEyUovGUehv82L-IdNRusaYFEm5b&pageurl=https://freebitco.in/?op=home&here=now");
+            driver.Navigate().GoToUrl("http://rucaptcha.com/in.php?key=" + textBox1.Text + "&method=userrecaptcha&googlekey=6LeGfGIUAAAAAEyUovGUehv82L-IdNRusaYFEm5b&pageurl=https://freebitco.in/?op=home&here=now");
             id = Convert.ToString((driver.FindElement(By.XPath("/html/body")).Text).Replace("OK|", ""));
             UpdateLog("id капчи: " + id);
 
             Thread.Sleep(1000);
-            driver.Navigate().GoToUrl("http://rucaptcha.com/res.php?key=50e9fba39de714daa84c59e34ad638b2&action=get&id=" + id);
+            driver.Navigate().GoToUrl("http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=get&id=" + id);
 
             while (Convert.ToString(driver.FindElement(By.XPath("/html/body")).Text) == "CAPCHA_NOT_READY" && reqcount < 60)
             {
                 Thread.Sleep(3000);
-                driver.Navigate().GoToUrl("http://rucaptcha.com/res.php?key=50e9fba39de714daa84c59e34ad638b2&action=get&id=" + id);
+                driver.Navigate().GoToUrl("http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=get&id=" + id);
 
             }
 
@@ -467,36 +465,7 @@ namespace Fuset
                 UpdateLog("Error: " + ex.Message);
             }
         }
-
-
-        //public void DataGridUpdate()
-        //{
-        //    DataTable dTable = new DataTable();
-        //    String sqlQuery;
-
-
-        //    try
-        //    {
-        //        sqlQuery = "SELECT * FROM Log";
-        //        SQLiteDataAdapter adapter = new SQLiteDataAdapter(sqlQuery, m_dbConn);
-        //        adapter.Fill(dTable);
-
-        //        if (dTable.Rows.Count > 0)
-        //        {
-        //            dataGridView1.Rows.Clear();
-
-        //            for (int i = dTable.Rows.Count - 1; i >= 0; i--)
-        //                dataGridView1.Rows.Add(dTable.Rows[i].ItemArray);
-        //        }
-        //        else
-        //            UpdateLog("Database is empty");
-        //    }
-        //    catch (SQLiteException ex)
-        //    {
-        //        UpdateLog("Error: " + ex.Message);
-        //    }
-        //}
-
+        
         public void UpdateLog(string s)
         {
             
@@ -521,8 +490,7 @@ namespace Fuset
 
             Invoke(action);
         }
-
-
+        
         public IWebElement FandS(IWebDriver driver, string selector)
         {
             IWebElement element = null;
@@ -539,22 +507,22 @@ namespace Fuset
                 }
 
             }
-            catch (OpenQA.Selenium.StaleElementReferenceException)
-            {
-                while (true)
-                {
-                    try
-                    {
-                        Thread.Sleep(500);
-                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", element);
-                        return element;
-                    }
-                    catch
-                    {
-                        continue;
-                    }
-                }
-            }
+            //catch (OpenQA.Selenium.StaleElementReferenceException)
+            //{
+            //    while (true)
+            //    {
+            //        try
+            //        {
+            //            Thread.Sleep(500);
+            //            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", element);
+            //            return element;
+            //        }
+            //        catch
+            //        {
+            //            continue;
+            //        }
+            //    }
+            //}
             catch (NoSuchElementException)
             {
                 //UpdateLog2(selector + " не CssSelector");
@@ -573,7 +541,7 @@ namespace Fuset
             }
             catch (NoSuchElementException)
             {
-                
+                //UpdateLog2(selector + " не XPath");
             }
 
             try
@@ -650,20 +618,14 @@ namespace Fuset
             Invoke(action);
         }
 
-        public void stat()
-        {
-            //dataGridView2[0, 0].Value = spred_BTC;
-            //dataGridView2[1, 0].Value = old_RP;
-            //dataGridView2[2, 0].Value = old_RP;
-            //dataGridView2[3, 0].Value = old_RP;
-        }
-
         public void bonus(IWebDriver driver)
         {
             
 
             if (checkBox1.Checked)
             {
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+
                 driver.FindElement(By.PartialLinkText("REWARDS")).Click();
                 old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
                 FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]").Click();
@@ -687,8 +649,6 @@ namespace Fuset
                 if (old_RP >= 2800 && old_RP < 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button").Click(); }
                 if (old_RP >= 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button").Click(); }
                 driver.Navigate().GoToUrl("https://freebitco.in/");
-
-
             }
         }
 
@@ -713,29 +673,12 @@ namespace Fuset
                 options.AddArguments("--start-maximized");
                 IWebDriver driver = new ChromeDriver(options);
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+                //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
 
                 UpdateLog2(data_get_prof(i) + " - " + data_get_proxy(i));
-
-                try
-                {
-                    driver.Navigate().GoToUrl("https://freebitco.in/");
-
-                    
-                }
-                catch (Exception)
-                {
-                    
-
-                    proxy_change(i);
-
-
-                    timing_list[i] = 10;
-                    driver.Quit();
-                    busy = false;
-                    return;
-                }
-
+                
+                driver.Navigate().GoToUrl("https://freebitco.in/");
+                
                 if (!IsElementVisible(FandS(driver, "deposit_withdraw_container")))
                 {
                     if (IsElementVisible(FandS(driver, ".error-code")).ToString() == "ERR_PROXY_CONNECTION_FAILED")//error-code
@@ -825,8 +768,6 @@ namespace Fuset
                     if (IsElementVisible(FandS(driver, "same_ip_error")) || IsElementVisible(FandS(driver, "free_play_error")))
                     {
                         proxy_change(i);
-
-
                         timing_list[i] = 10;
                         driver.Quit();
                         busy = false;
@@ -867,7 +808,6 @@ namespace Fuset
         {
             await Task.Run(() =>
             {
-                //options.AddArgument("--headless");
                 options = new ChromeOptions();
                 Proxy proxy = new Proxy();
                 proxy.Kind = ProxyKind.Manual;
@@ -881,34 +821,122 @@ namespace Fuset
                 options.AddArguments("--start-maximized");
                 IWebDriver driver = new ChromeDriver(options);
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+                //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
 
-                UpdateLog2(data_get_prof(i) + " - " + data_get_proxy(i));
-                
-                driver.Navigate().GoToUrl("https://freebitco.in/");
+                int load_falls = 0;
+                do
+                {
+                    try
+                    {
+                        driver.Navigate().GoToUrl("https://freebitco.in/");
 
-                
+                        if (!IsElementVisible(FandS(driver, "deposit_withdraw_container")))                                                 //Загрузилось страница ошибки
+                        {
+                            load_falls++;
+                            UpdateLog2("freebitco.in не загружена(" + load_falls + ")" + driver.FindElement(By.CssSelector(".error-code")).Text);
+                        }
+                        else                                                                                                                //Загрузилось freebitco.in
+                        {
+                            try
+                            {
+                                IWebElement dynamicElement = (new WebDriverWait(driver, TimeSpan.FromSeconds(10))).Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
+                                UpdateLog2("Кулдаун загрузился " + Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 61);
+                                timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
+                                driver.Quit();
+                                busy = false;
+                                return;
+                            }
+                            catch (Exception)
+                            {
+                                UpdateLog2("Кулдаун не найден.");
+                                if (IsElementVisible(FandS(driver, "free_play_form_button")))
+                                {
+                                    UpdateLog2("кнопка сбора найдена");
+                                    break;
+                                }
+                                else
+                                {
+                                    UpdateLog2("кнопка сбора не найдена");
+                                }
+                            }
+                        }
+
+                        continue;
+                    }
+                    catch (WebDriverException)
+                    {
+                        load_falls++;
+                        UpdateLog2("страница не загружена - " + load_falls + " раз.");
+                        continue;
+                    }
+                } while (load_falls < 10);                      //Модуль загрузки страницы
+
+                if (load_falls >= 10 || IsElementVisible(FandS(driver, "multi_acct_same_ip")))
+                {
+                    if (load_falls >= 10)
+                    {
+                        UpdateLog2("Количество попыток загрузки 10, меняем прокси (" + data_get_proxy(i) + ")");
+                        m_sqlCmd.CommandText = "update Proxy_list set usage = 2 where proxy = '" + data_get_proxy(i) + "'";
+                        m_sqlCmd.ExecuteNonQuery();
+                    }
+                    if (IsElementVisible(FandS(driver, "multi_acct_same_ip")))
+                        UpdateLog2("Ошибка сбора (" + FandS(driver, "multi_acct_same_ip").Text + ")");
+                    proxy_change(i);
+                    timing_list[i] = 10;
+                    driver.Quit();
+                    busy = false;
+                    return;
+                }
+
+                do
+                {
+                    if (IsElementVisible(FandS(driver, "switch_captchas_button")))
+                        simple_captcha(driver);
+
+
+                    if (IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
+                        Rucaptchav2(driver);
+
+                    FandS(driver, "free_play_form_button").Click();
+
+                    try
+                    {
+                        IWebElement dynamicElement = (new WebDriverWait(driver, TimeSpan.FromSeconds(10))).Until(ExpectedConditions.ElementIsVisible(By.Id("winnings")));
+                        UpdateLog2(dynamicElement.Text);
+                        timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
+                        driver.Quit();
+                        busy = false;
+                        return;
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+
+                    //Thread.Sleep(10000);
+                    if (IsElementVisible(FandS(driver, "same_ip_error")))          // || IsElementVisible(FandS(driver, "free_play_error"))
+                    {
+                        proxy_change(i);
+                        timing_list[i] = 10;
+                        driver.Quit();
+                        busy = false;
+                        return;
+                    }
+                    
+                    driver.Navigate().Refresh();
+                }
+                while (IsElementVisible(FandS(driver, "free_play_form_button")));
                 
                 driver.Quit();
                 busy = false;
-
             });
         }
-
-
+        
         public Form1()
         {
             InitializeComponent();
-            
-            
         }
-
-        private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e)
-        {
-            //richTextBox1.AppendText(listBox1.SelectedItem.ToString() + "\n");
-            //richTextBox1.AppendText(listBox1.SelectedIndex.ToString() + "\n");
-        }
-
+        
         private void Go_Click(object sender, EventArgs e)
         {
             if (Go.Text == "Паихали!")
@@ -948,10 +976,6 @@ namespace Fuset
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
             driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
             driver.Navigate().GoToUrl("https://freebitco.in/");
-
-            
-
-
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -975,7 +999,7 @@ namespace Fuset
                     if (timing_list[i] <= 0 && busy == false)
                     {
                     busy = true;
-                    Step(i);
+                    Step2(i);
                     }
 
                 }
@@ -989,9 +1013,6 @@ namespace Fuset
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            listBox1.SetSelected(0, true);
-
-
             m_dbConn = new SQLiteConnection();
             m_sqlCmd = new SQLiteCommand();
 
@@ -1079,39 +1100,11 @@ namespace Fuset
             //login_button
         }
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
-            
-        }
-
         private void button4_Click(object sender, EventArgs e)
         {
             
             //DataGridUpdate();
         }
-
-        //private void button5_Click(object sender, EventArgs e)
-        //{
-        //    try
-        //    {
-        //        m_sqlCmd.CommandText = "INSERT INTO Setting (id, 'akk', 'prof', 'proxy') values ('" + Convert.ToInt32(textBox6.Text) + "' , '" + textBox2.Text + "' , '" + textBox3.Text + "' , '" + textBox4.Text + "')";
-
-
-        //        m_sqlCmd.ExecuteNonQuery();
-        //    }
-        //    catch (SQLiteException ex)
-        //    {
-        //        UpdateLog("Error: " + ex.Message);
-        //    }
-
-        //    DataGridUpdate1();
-        //    textBox2.Clear();
-        //    textBox3.Clear();
-        //    textBox4.Clear();
-        //    textBox6.Clear();
-
-        //    get_timing_list();
-        //}
 
         private void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
@@ -1120,58 +1113,36 @@ namespace Fuset
                 MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
                 return;
             }
-            int i = Convert.ToInt32(textBox5.Text);
+
 
             options = new ChromeOptions();
             Proxy proxy = new Proxy();
             proxy.Kind = ProxyKind.Manual;
             proxy.IsAutoDetect = false;
-            proxy.HttpProxy = data_get_proxy(i);
-            proxy.SslProxy = data_get_proxy(i);
+            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
             options.Proxy = proxy;
             options.AddArgument("ignore-certificate-errors");
 
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
             options.AddArguments("--start-maximized");
             IWebDriver driver = new ChromeDriver(options);
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
             driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-
             driver.Navigate().GoToUrl("https://freebitco.in/");
 
-            if (!IsElementVisible(FandS(driver, "deposit_withdraw_container")))
-            {
-                //UpdateLog2(driver.FindElement(By.CssSelector(".error-code")).Text);//ERR_CONNECTION_TIMED_OUT ERR_PROXY_CONNECTION_FAILED
+            //((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.CssSelector(".large-12.fixed")));
 
-                switch (driver.FindElement(By.CssSelector(".error-code")).Text)
-                {
-                    case "ERR_CONNECTION_TIMED_OUT":
-                        UpdateLog2("ERR_CONNECTION_TIMED_OUT");
-                        break;
-                    case "ERR_PROXY_CONNECTION_FAILED":
-                        UpdateLog2("ERR_PROXY_CONNECTION_FAILED");
-                        break;
-                    default:
-                        break;
-                }
+            //Thread.Sleep(5000);
 
-                driver.Quit();
-                
-
-            }
-            else
-            {
-                UpdateLog2("Загрузилась");
-                driver.Quit();
-            }
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
 
         }
-            //gradsIdvPhoneNext
-            private void button7_Click(object sender, EventArgs e)//обновление
+
+        private void button7_Click(object sender, EventArgs e)//обновление
         {
             DataGridUpdate1();
         }
-
         
         private void форматСпискаПрофилейToolStripMenuItem_Click(object sender, EventArgs e)
         {
