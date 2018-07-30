@@ -630,18 +630,18 @@ namespace Fuset
                 old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
                 FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]").Click();
 
-                //if (old_RP >= 12 && old_RP < 120) { FandS(driver, "//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button").Click(); }
-                //if (old_RP >= 120 && old_RP < 300) { FandS(driver, "//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button").Click(); }
-                //if (old_RP >= 300 && old_RP < 600) { FandS(driver, "//*[@id='free_points_rewards']/div[3]/div[2]/div[3]/button").Click(); }
-                //if (old_RP >= 600 && old_RP < 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[2]/div[2]/div[3]/button").Click(); }
-                //if (old_RP >= 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button").Click(); }
+                if (old_RP >= 12 && old_RP < 120) { FandS(driver, "//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button").Click(); }
+                if (old_RP >= 120 && old_RP < 300) { FandS(driver, "//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button").Click(); }
+                if (old_RP >= 300 && old_RP < 600) { FandS(driver, "//*[@id='free_points_rewards']/div[3]/div[2]/div[3]/button").Click(); }
+                if (old_RP >= 600 && old_RP < 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[2]/div[2]/div[3]/button").Click(); }
+                if (old_RP >= 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button").Click(); }
                 //driver.Navigate().GoToUrl("https://freebitco.in/");
-                
-                if (old_RP >= 12 && old_RP < 120) { UpdateLog2("Активируем бонус за 12 на счету " + old_RP + "RP"); }
-                if (old_RP >= 120 && old_RP < 300) { UpdateLog2("Активируем бонус за 120 на счету " + old_RP + "RP"); }
-                if (old_RP >= 300 && old_RP < 600) { UpdateLog2("Активируем бонус за 300 на счету " + old_RP + "RP"); }
-                if (old_RP >= 600 && old_RP < 1200) { UpdateLog2("Активируем бонус за 600 на счету " + old_RP + "RP"); }
-                if (old_RP >= 1200) { UpdateLog2("Активируем бонус за 1200 на счету " + old_RP + "RP"); }
+
+                //if (old_RP >= 12 && old_RP < 120) { UpdateLog2("Активируем бонус за 12 на счету " + old_RP + "RP"); }
+                //if (old_RP >= 120 && old_RP < 300) { UpdateLog2("Активируем бонус за 120 на счету " + old_RP + "RP"); }
+                //if (old_RP >= 300 && old_RP < 600) { UpdateLog2("Активируем бонус за 300 на счету " + old_RP + "RP"); }
+                //if (old_RP >= 600 && old_RP < 1200) { UpdateLog2("Активируем бонус за 600 на счету " + old_RP + "RP"); }
+                //if (old_RP >= 1200) { UpdateLog2("Активируем бонус за 1200 на счету " + old_RP + "RP"); }
 
 
             }
@@ -652,14 +652,14 @@ namespace Fuset
                 old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
                 FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]").Click();
 
-                //if (old_RP >= 1520 && old_RP < 2800) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[3]/div[2]/div[3]/button").Click(); }
-                //if (old_RP >= 2800 && old_RP < 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button").Click(); }
-                //if (old_RP >= 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button").Click(); }
+                if (old_RP >= 1520 && old_RP < 2800) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[3]/div[2]/div[3]/button").Click(); }
+                if (old_RP >= 2800 && old_RP < 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button").Click(); }
+                if (old_RP >= 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button").Click(); }
                 //driver.Navigate().GoToUrl("https://freebitco.in/");
 
-                if (old_RP >= 1520 && old_RP < 2800) { UpdateLog2("Активируем бонус за 320 на счету " + old_RP + "RP"); }
-                if (old_RP >= 2800 && old_RP < 4400) { UpdateLog2("Активируем бонус за 1600 на счету " + old_RP + "RP"); }
-                if (old_RP >= 4400) { UpdateLog2("Активируем бонус за 3200 на счету " + old_RP + "RP"); }
+                //if (old_RP >= 1520 && old_RP < 2800) { UpdateLog2("Активируем бонус за 320 на счету " + old_RP + "RP"); }
+                //if (old_RP >= 2800 && old_RP < 4400) { UpdateLog2("Активируем бонус за 1600 на счету " + old_RP + "RP"); }
+                //if (old_RP >= 4400) { UpdateLog2("Активируем бонус за 3200 на счету " + old_RP + "RP"); }
             }
 
             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
@@ -941,7 +941,7 @@ namespace Fuset
                         return;
                     }
                     
-                    //driver.Navigate().Refresh();
+                    driver.Navigate().Refresh();
                 }
                 while (IsElementVisible(FandS(driver, "free_play_form_button")));
                 
