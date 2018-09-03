@@ -30,6 +30,8 @@ namespace Fuset
         int spred_RP = 0;
         int Time = 0;
         int miss = 0;
+        int RP_cost = 0;
+        int RP_bonus_cost = 0;
         bool busy = false;
         IWebElement logo;
         String logoSRC;
@@ -41,6 +43,53 @@ namespace Fuset
         private SQLiteConnection m_dbConn;
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
+
+        public void multiply(int wager, IWebDriver driver)
+        {
+            string[] words;
+            int result;
+            int bet = 1;
+
+            FandS(driver, "REQUIREMENTS TO UNLOCK BONUSES").Click();
+            Thread.Sleep(1000);
+            FandS(driver, "//*[@id='unblock_modal_rp_bonuses_container']/div[1]").Click();
+            Thread.Sleep(1000);
+            UpdateLog2(FandS(driver, "option_container_buy_lottery").Text);
+            
+            words = FandS(driver, "option_container_buy_lottery").Text.Split(new char[] { ' ' });
+            UpdateLog2(words[1]);
+            wager = Convert.ToInt32(words[1].Replace(".", ""));
+            UpdateLog2(Convert.ToString(wager));
+
+            driver.Navigate().Refresh();
+
+            driver.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
+            driver.FindElement(By.Id("double_your_btc_bet_hi_button")).Click();
+            
+            result = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ""));
+            UpdateLog2(Convert.ToString(result));
+
+            if (result < 0)
+            {
+
+            }
+
+        }
+
+        public void send_vk(string text, IWebDriver driver)
+        {
+            ((IJavaScriptExecutor)driver).ExecuteScript("window.open()");
+            driver.SwitchTo().Window(driver.WindowHandles.Last());
+
+            driver.Navigate().GoToUrl("https://vk.com/im?sel=8300061");
+            driver.FindElement(By.Id("im_editable8300061")).SendKeys(text);
+            driver.FindElement(By.XPath("//*[@id='content']/div/div[1]/div[3]/div[3]/div[4]/div[3]/div[3]/div[1]/button")).Click();
+            Thread.Sleep(1000);
+
+
+            driver.Close();
+            driver.SwitchTo().Window(driver.WindowHandles.Last());
+        }
 
         public void add_good_proxy(string proxy)
         {
@@ -319,6 +368,7 @@ namespace Fuset
 
                 if (logoSRC == "ERROR|TIMEOUT" || logoSRC == "ERROR_CAPTCHA_UNSOLVABLE")//ERROR_CAPTCHA_UNSOLVABLE
                 {
+                    UpdateLog2("ERROR_CAPTCHA_UNSOLVABLE");
                     return false;
                 }
                 else
@@ -360,6 +410,8 @@ namespace Fuset
 
                 if (logoSRC == "ERROR | TIMEOUT")
                 {
+                    UpdateLog2("ERROR | TIMEOUT");
+
                     return false;
                 }
                 else
@@ -373,7 +425,7 @@ namespace Fuset
                     logoSRC = Rucaptcha.Recognize(PuthToPicture);
                     FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
                     
-                    miss += 4;
+                    miss += 3;
                     return true;
                 }
             }
@@ -428,7 +480,7 @@ namespace Fuset
         {
             try
             {
-                m_sqlCmd.CommandText = "INSERT INTO Catalog ('Время', 'RP', 'BTC', 'miss') values ('" + DateTime.Now + "' , '" + RP + "' , '" + BTC + "', '" + miss + "')";
+                m_sqlCmd.CommandText = "INSERT INTO Log ('Время', 'RP', 'BTC', 'miss') values ('" + DateTime.Now + "' , '" + RP + "' , '" + BTC + "', '" + miss + "')";
 
                 m_sqlCmd.ExecuteNonQuery();
             }
@@ -609,13 +661,14 @@ namespace Fuset
 
                 if (spred_BTC != 0)
                 {
-                    DataUpdate(spred_RP, spred_BTC, miss);
+                    DataUpdate(spred_RP - RP_cost, spred_BTC, miss);
                     //DataGridUpdate();
                 }
             };
 
 
             Invoke(action);
+            RP_bonus_cost = 0;
         }
 
         public void bonus(IWebDriver driver)
@@ -629,12 +682,13 @@ namespace Fuset
                 driver.FindElement(By.PartialLinkText("REWARDS")).Click();
                 old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
                 FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]").Click();
+                Thread.Sleep(1000);
 
-                if (old_RP >= 12 && old_RP < 120) { FandS(driver, "//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button").Click(); }
-                if (old_RP >= 120 && old_RP < 300) { FandS(driver, "//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button").Click(); }
-                if (old_RP >= 300 && old_RP < 600) { FandS(driver, "//*[@id='free_points_rewards']/div[3]/div[2]/div[3]/button").Click(); }
-                if (old_RP >= 600 && old_RP < 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[2]/div[2]/div[3]/button").Click(); }
-                if (old_RP >= 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button").Click(); }
+                if (old_RP >= 12 && old_RP < 120) { FandS(driver, "//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button").Click();}
+                if (old_RP >= 120 && old_RP < 300) { FandS(driver, "//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button").Click();}
+                if (old_RP >= 300 && old_RP < 600) { FandS(driver, "//*[@id='free_points_rewards']/div[3]/div[2]/div[3]/button").Click();}
+                if (old_RP >= 600 && old_RP < 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[2]/div[2]/div[3]/button").Click();}
+                if (old_RP >= 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button").Click(); RP_bonus_cost =+ 1200; }//*[@id="free_points_rewards"]/div[1]/div[2]/div[3]/button
                 //driver.Navigate().GoToUrl("https://freebitco.in/");
 
                 //if (old_RP >= 12 && old_RP < 120) { UpdateLog2("Активируем бонус за 12 на счету " + old_RP + "RP"); }
@@ -651,10 +705,11 @@ namespace Fuset
                 //driver.FindElement(By.PartialLinkText("REWARDS")).Click();
                 old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
                 FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]").Click();
+                Thread.Sleep(1000);
 
-                if (old_RP >= 1520 && old_RP < 2800) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[3]/div[2]/div[3]/button").Click(); }
-                if (old_RP >= 2800 && old_RP < 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button").Click(); }
-                if (old_RP >= 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button").Click(); }
+                if (old_RP >= 1520 && old_RP < 2800) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[3]/div[2]/div[3]/button").Click();}
+                if (old_RP >= 2800 && old_RP < 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button").Click();}
+                if (old_RP >= 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button").Click();}
                 //driver.Navigate().GoToUrl("https://freebitco.in/");
 
                 //if (old_RP >= 1520 && old_RP < 2800) { UpdateLog2("Активируем бонус за 320 на счету " + old_RP + "RP"); }
@@ -840,6 +895,7 @@ namespace Fuset
                 //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
 
                 int load_falls = 0;
+                miss = 0;
                 do
                 {
                     try
@@ -903,24 +959,65 @@ namespace Fuset
                     busy = false;
                     return;
                 }
-
-                bonus(driver);
+                
 
                 do
                 {
+                    if (IsElementVisible(FandS(driver, "play_without_captchas_button")))
+                    {
+                        FandS(driver, "play_without_captchas_button").Click();
+                        RP_cost = Convert.ToInt32(FandS(driver, "//*[@id='play_without_captcha_desc']/div/p[2]/span").Text);
+
+                        if (RP_cost <= 5)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            FandS(driver, "play_with_captcha_button").Click();
+                            RP_cost = 0;
+                        }
+                    }
+
                     if (IsElementVisible(FandS(driver, "switch_captchas_button")))
+                    {
+                        
                         simple_captcha(driver);
+                    }
 
 
                     if (IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
-                        Rucaptchav2(driver);
+                    {
+                        //send_vk("текстовая капча недоступна", driver);
+                        UpdateLog2("текстовая капча недоступна");
+                        timing_list[i] = 3600;
+                        driver.Quit();
+                        busy = false;
+                        return;
+                        //Rucaptchav2(driver);
+                    }
+
+                    bonus(driver);
+                    try
+                    {
+                        FandS(driver, "/html/body/div[1]/div/a[1]").Click();
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+
 
                     FandS(driver, "free_play_form_button").Click();
 
                     try
                     {
-                        IWebElement dynamicElement = (new WebDriverWait(driver, TimeSpan.FromSeconds(10))).Until(ExpectedConditions.ElementIsVisible(By.Id("winnings")));
-                        UpdateLog2(dynamicElement.Text);
+                        IWebElement btcElement = (new WebDriverWait(driver, TimeSpan.FromSeconds(10))).Until(ExpectedConditions.ElementIsVisible(By.Id("winnings")));
+
+                        IWebElement rpElement = (new WebDriverWait(driver, TimeSpan.FromSeconds(10))).Until(ExpectedConditions.ElementIsVisible(By.Id("fp_reward_points_won")));
+                        calculete(btcElement.Text, rpElement.Text, miss);
+                        //UpdateLog2(btcElement.Text);
+
                         timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
                         driver.Quit();
                         busy = false;
@@ -1149,11 +1246,7 @@ namespace Fuset
             driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
             driver.Navigate().GoToUrl("https://freebitco.in/");
 
-            //((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.CssSelector(".large-12.fixed")));
-
-            //Thread.Sleep(5000);
-
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+            multiply(1, driver);
 
         }
 
@@ -1171,7 +1264,16 @@ namespace Fuset
 
         private void button5_Click(object sender, EventArgs e)
         {
-            update_proxy_list();
+            //update_proxy_list();
+
+            using (StreamReader sr = new StreamReader(Application.StartupPath + @"\proxy.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    add_good_proxy(line);
+                }
+            }
         }
     }
 }
