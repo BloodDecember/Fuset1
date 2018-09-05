@@ -44,36 +44,75 @@ namespace Fuset
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
 
-        public void multiply(int wager, IWebDriver driver)
+        public int multiply(IWebDriver driver)
         {
             string[] words;
             int result;
-            int bet = 1;
+            int luz_num = 0;
+            int wager;
 
-            FandS(driver, "REQUIREMENTS TO UNLOCK BONUSES").Click();
-            Thread.Sleep(1000);
-            FandS(driver, "//*[@id='unblock_modal_rp_bonuses_container']/div[1]").Click();
-            Thread.Sleep(1000);
-            UpdateLog2(FandS(driver, "option_container_buy_lottery").Text);
-            
-            words = FandS(driver, "option_container_buy_lottery").Text.Split(new char[] { ' ' });
-            UpdateLog2(words[1]);
-            wager = Convert.ToInt32(words[1].Replace(".", ""));
-            UpdateLog2(Convert.ToString(wager));
-
-            driver.Navigate().Refresh();
-
-            driver.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
-            driver.FindElement(By.Id("double_your_btc_bet_hi_button")).Click();
-            
-            result = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ""));
-            UpdateLog2(Convert.ToString(result));
-
-            if (result < 0)
+            try
             {
+                FandS(driver, "REQUIREMENTS TO UNLOCK BONUSES").Click();
+                Thread.Sleep(1000);
+                FandS(driver, "//*[@id='unblock_modal_rp_bonuses_container']/div[1]").Click();
+                Thread.Sleep(1000);
+                UpdateLog2(FandS(driver, "option_container_buy_lottery").Text);
 
+                words = FandS(driver, "option_container_buy_lottery").Text.Split(new char[] { ' ' });
+                UpdateLog2(words[1]);
+                wager = Convert.ToInt32(words[1].Replace(".", "")) + 10;
+                UpdateLog2(Convert.ToString(wager));
+
+                driver.Navigate().Refresh();
+
+                driver.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
+
+                driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
+                Thread.Sleep(700);
+                driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                Thread.Sleep(700);
+                result = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ""));
+
+                do
+                {
+                    if (luz_num >= 5)
+                    {
+                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("s");
+                        Thread.Sleep(500);
+                    }
+                    else
+                    {
+                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
+                        Thread.Sleep(500);
+                    }
+                    driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                    Thread.Sleep(500);
+                    result = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ""));
+
+                    if (result < 0)
+                    {
+                        luz_num++;
+                        
+                        wager += result;
+                    }
+
+                    else
+                    {
+                        luz_num = 0;
+
+                        wager -= result;
+                    }
+                    //UpdateLog2(Convert.ToString(result));
+                    //UpdateLog2(Convert.ToString(wager));
+                    
+                } while (wager >= 0);
             }
-
+            catch (Exception)
+            {
+                return 3600;
+            }
+            return 10;
         }
 
         public void send_vk(string text, IWebDriver driver)
@@ -887,6 +926,7 @@ namespace Fuset
                 proxy.SslProxy = data_get_proxy(i);
                 options.Proxy = proxy;
                 options.AddArgument("ignore-certificate-errors");
+                //options.AddArgument("--headless");
 
                 options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
                 options.AddArguments("--start-maximized");
@@ -990,7 +1030,7 @@ namespace Fuset
                     {
                         //send_vk("текстовая капча недоступна", driver);
                         UpdateLog2("текстовая капча недоступна");
-                        timing_list[i] = 3600;
+                        timing_list[i] = multiply(driver);
                         driver.Quit();
                         busy = false;
                         return;
@@ -1221,33 +1261,37 @@ namespace Fuset
             //DataGridUpdate();
         }
 
-        private void button6_Click(object sender, EventArgs e)//тестовая кнопка
+        public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            if (textBox5.Text.Length == 0)
+            await Task.Run(() =>
             {
-                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
-                return;
-            }
+
+                if (textBox5.Text.Length == 0)
+                {
+                    MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
+                    return;
+                }
 
 
-            options = new ChromeOptions();
-            Proxy proxy = new Proxy();
-            proxy.Kind = ProxyKind.Manual;
-            proxy.IsAutoDetect = false;
-            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-            options.Proxy = proxy;
-            options.AddArgument("ignore-certificate-errors");
+                options = new ChromeOptions();
+                Proxy proxy = new Proxy();
+                proxy.Kind = ProxyKind.Manual;
+                proxy.IsAutoDetect = false;
+                proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+                proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+                options.Proxy = proxy;
+                options.AddArgument("ignore-certificate-errors");
+                
 
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
-            options.AddArguments("--start-maximized");
-            IWebDriver driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-            driver.Navigate().GoToUrl("https://freebitco.in/");
+                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
+                options.AddArguments("--start-maximized");
+                IWebDriver driver = new ChromeDriver(options);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+                driver.Navigate().GoToUrl("https://freebitco.in/");
 
-            multiply(1, driver);
-
+                multiply(driver);
+            });
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
