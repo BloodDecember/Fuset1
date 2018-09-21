@@ -44,75 +44,115 @@ namespace Fuset
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
 
+        public void write_balance(IWebDriver driver, int i)
+        {
+            int balance;
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+
+            balance = Convert.ToInt32(driver.FindElement(By.Id("balance")).Text.Replace(".", ""));
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT id FROM Balance WHERE id ='" + i + "'";
+            try
+            {
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read(); //sqlite_datareader.GetInt32(0)
+                sqlite_datareader.GetInt32(0);
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "update Balance set satoshi = " + balance + " where ID = " + i;
+            }
+            catch (System.InvalidOperationException)
+            {
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "INSERT INTO Balance ('id', 'satoshi') values ('" + i + "', '" + balance + "' )";
+
+                m_sqlCmd.ExecuteNonQuery();
+            }
+        }
+
         public int multiply(IWebDriver driver)
         {
             string[] words;
-            int result;
+            double result;
             int luz_num = 0;
-            int wager;
+            double wager = 100;
+            //double bet = 0.00000001;
 
-            try
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+
+            if (Convert.ToInt32(driver.FindElement(By.Id("balance")).Text.Replace(".", "")) > 30000)
             {
-                FandS(driver, "REQUIREMENTS TO UNLOCK BONUSES").Click();
-                Thread.Sleep(1000);
-                FandS(driver, "//*[@id='unblock_modal_rp_bonuses_container']/div[1]").Click();
-                Thread.Sleep(1000);
-                UpdateLog2(FandS(driver, "option_container_buy_lottery").Text);
-
-                words = FandS(driver, "option_container_buy_lottery").Text.Split(new char[] { ' ' });
-                UpdateLog2(words[1]);
-                wager = Convert.ToInt32(words[1].Replace(".", "")) + 10;
-                UpdateLog2(Convert.ToString(wager));
-
-                driver.Navigate().Refresh();
-
-                driver.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
-
-                driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
-                Thread.Sleep(700);
-                driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
-                Thread.Sleep(700);
-                result = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ""));
-
-                do
+                try
                 {
-                    if (luz_num >= 5)
-                    {
-                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("s");
-                        Thread.Sleep(500);
-                    }
-                    else
-                    {
-                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
-                        Thread.Sleep(500);
-                    }
+                    FandS(driver, "REQUIREMENTS TO UNLOCK BONUSES").Click();
+                    Thread.Sleep(1000);
+                    FandS(driver, "//*[@id='unblock_modal_rp_bonuses_container']/div[1]").Click();
+                    Thread.Sleep(1000);
+                    UpdateLog2(FandS(driver, "option_container_buy_lottery").Text);
+
+                    words = FandS(driver, "option_container_buy_lottery").Text.Split(new char[] { ' ' });
+                    UpdateLog2(words[1]);
+                    wager = Convert.ToDouble(words[1].Replace(".", ","));
+                    UpdateLog2(Convert.ToString(wager));
+
+                    driver.Navigate().Refresh();
+
+                    driver.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
+
+                    driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
+                    Thread.Sleep(200);
                     driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
-                    Thread.Sleep(500);
-                    result = Convert.ToInt32(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ""));
+                    Thread.Sleep(400);
+                    result = Convert.ToDouble(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ","));
 
-                    if (result < 0)
+
+                    do
                     {
-                        luz_num++;
-                        
-                        wager += result;
-                    }
+                        if (luz_num >= 5)
+                        {
+                            result = result * 2;
+                            
+                            driver.FindElement(By.Id("double_your_btc_stake")).Clear();
+                            driver.FindElement(By.Id("double_your_btc_stake")).SendKeys(result.ToString("F8").Replace("-", "").Replace(",", "."));
+                            //Thread.Sleep(200);
+                        }
+                        else
+                        {
 
-                    else
-                    {
-                        luz_num = 0;
+                            driver.FindElement(By.Id("double_your_btc_stake")).Clear();
+                            driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
+                            //Thread.Sleep(200);
+                        }
+                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                        Thread.Sleep(400);
+                        result = Convert.ToDouble(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ","));
 
-                        wager -= result;
-                    }
-                    //UpdateLog2(Convert.ToString(result));
-                    //UpdateLog2(Convert.ToString(wager));
-                    
-                } while (wager >= 0);
+                        if (result < 0)
+                        {
+                            luz_num++;
+
+                            wager += result;
+                        }
+
+                        else
+                        {
+                            luz_num = 0;
+                            //bet = 0.00000001;
+                            wager -= result;
+                        }
+                        //UpdateLog2(Convert.ToString(result));
+                        //UpdateLog2(Convert.ToString(wager));
+
+                    } while (wager >= 0 || luz_num != 0);
+                }
+                catch (Exception)
+                {
+                    return 3600;
+                }
+                return 10;
             }
-            catch (Exception)
-            {
-                return 3600;
-            }
-            return 10;
+            return 3600;
         }
 
         public void send_vk(string text, IWebDriver driver)
@@ -228,14 +268,38 @@ namespace Fuset
             string new_proxy;
             int usage;
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT usage FROM Proxy_list WHERE id = " + id_proxy;
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-            usage = sqlite_datareader.GetInt32(0);
+            
+            try
+            {
+                m_sqlCmd = m_dbConn.CreateCommand();
+                m_sqlCmd.CommandText = "SELECT usage FROM Proxy_list WHERE id = " + id_proxy;
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read();
+                usage = sqlite_datareader.GetInt32(0);
+                
+            }
+            catch (System.InvalidOperationException)
+            {
+                MessageBox.Show("Список прокси пуст, обновляю список.", "Error", MessageBoxButtons.OK);
+
+                using (StreamReader sr = new StreamReader(Application.StartupPath + @"\proxy.txt"))
+                {
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        add_good_proxy(line);
+                    }
+                }
+
+                m_sqlCmd = m_dbConn.CreateCommand();
+                m_sqlCmd.CommandText = "SELECT usage FROM Proxy_list WHERE id = " + id_proxy;
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read();
+                usage = sqlite_datareader.GetInt32(0);
+                
+            }
 
             sqlite_datareader.Close();
-
             UpdateLog2("id_proxy - " + id_proxy + usage);
 
             while (usage != 0)
@@ -354,6 +418,8 @@ namespace Fuset
             {
                 proxy_change(id_prof);
 
+                m_sqlCmd = m_dbConn.CreateCommand();
+                m_sqlCmd.CommandText = "SELECT proxy FROM Setting WHERE id = " + id_prof;
                 sqlite_datareader = m_sqlCmd.ExecuteReader();
                 sqlite_datareader.Read();
 
@@ -712,53 +778,58 @@ namespace Fuset
 
         public void bonus(IWebDriver driver)
         {
-            
 
-            if (checkBox1.Checked)
+            try
             {
+                if (checkBox1.Checked)
+                {
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+
+                    driver.FindElement(By.PartialLinkText("REWARDS")).Click();
+                    old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
+                    FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]").Click();
+                    Thread.Sleep(1000);
+
+                    if (old_RP >= 12 && old_RP < 120) { FandS(driver, "//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button").Click(); }
+                    if (old_RP >= 120 && old_RP < 300) { FandS(driver, "//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button").Click(); }
+                    if (old_RP >= 300 && old_RP < 600) { FandS(driver, "//*[@id='free_points_rewards']/div[3]/div[2]/div[3]/button").Click(); }
+                    if (old_RP >= 600 && old_RP < 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[2]/div[2]/div[3]/button").Click(); }
+                    if (old_RP >= 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button").Click(); RP_bonus_cost = +1200; }//*[@id="free_points_rewards"]/div[1]/div[2]/div[3]/button
+                                                                                                                                                       //driver.Navigate().GoToUrl("https://freebitco.in/");
+
+                    //if (old_RP >= 12 && old_RP < 120) { UpdateLog2("Активируем бонус за 12 на счету " + old_RP + "RP"); }
+                    //if (old_RP >= 120 && old_RP < 300) { UpdateLog2("Активируем бонус за 120 на счету " + old_RP + "RP"); }
+                    //if (old_RP >= 300 && old_RP < 600) { UpdateLog2("Активируем бонус за 300 на счету " + old_RP + "RP"); }
+                    //if (old_RP >= 600 && old_RP < 1200) { UpdateLog2("Активируем бонус за 600 на счету " + old_RP + "RP"); }
+                    //if (old_RP >= 1200) { UpdateLog2("Активируем бонус за 1200 на счету " + old_RP + "RP"); }
+
+
+                }
+
+                if (checkBox2.Checked)
+                {
+                    //driver.FindElement(By.PartialLinkText("REWARDS")).Click();
+                    old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
+                    FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]").Click();
+                    Thread.Sleep(1000);
+
+                    if (old_RP >= 1520 && old_RP < 2800) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[3]/div[2]/div[3]/button").Click(); }
+                    if (old_RP >= 2800 && old_RP < 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button").Click(); }
+                    if (old_RP >= 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button").Click(); }
+                    //driver.Navigate().GoToUrl("https://freebitco.in/");
+
+                    //if (old_RP >= 1520 && old_RP < 2800) { UpdateLog2("Активируем бонус за 320 на счету " + old_RP + "RP"); }
+                    //if (old_RP >= 2800 && old_RP < 4400) { UpdateLog2("Активируем бонус за 1600 на счету " + old_RP + "RP"); }
+                    //if (old_RP >= 4400) { UpdateLog2("Активируем бонус за 3200 на счету " + old_RP + "RP"); }
+                }
+
                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
-
-                driver.FindElement(By.PartialLinkText("REWARDS")).Click();
-                old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
-                FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]").Click();
-                Thread.Sleep(1000);
-
-                if (old_RP >= 12 && old_RP < 120) { FandS(driver, "//*[@id='free_points_rewards']/div[5]/div[2]/div[3]/button").Click();}
-                if (old_RP >= 120 && old_RP < 300) { FandS(driver, "//*[@id='free_points_rewards']/div[4]/div[2]/div[3]/button").Click();}
-                if (old_RP >= 300 && old_RP < 600) { FandS(driver, "//*[@id='free_points_rewards']/div[3]/div[2]/div[3]/button").Click();}
-                if (old_RP >= 600 && old_RP < 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[2]/div[2]/div[3]/button").Click();}
-                if (old_RP >= 1200) { FandS(driver, "//*[@id='free_points_rewards']/div[1]/div[2]/div[3]/button").Click(); RP_bonus_cost =+ 1200; }//*[@id="free_points_rewards"]/div[1]/div[2]/div[3]/button
-                //driver.Navigate().GoToUrl("https://freebitco.in/");
-
-                //if (old_RP >= 12 && old_RP < 120) { UpdateLog2("Активируем бонус за 12 на счету " + old_RP + "RP"); }
-                //if (old_RP >= 120 && old_RP < 300) { UpdateLog2("Активируем бонус за 120 на счету " + old_RP + "RP"); }
-                //if (old_RP >= 300 && old_RP < 600) { UpdateLog2("Активируем бонус за 300 на счету " + old_RP + "RP"); }
-                //if (old_RP >= 600 && old_RP < 1200) { UpdateLog2("Активируем бонус за 600 на счету " + old_RP + "RP"); }
-                //if (old_RP >= 1200) { UpdateLog2("Активируем бонус за 1200 на счету " + old_RP + "RP"); }
-
-
+                driver.FindElement(By.PartialLinkText("FREE BTC")).Click();
             }
-
-            if (checkBox2.Checked)
+            catch (Exception)
             {
-                //driver.FindElement(By.PartialLinkText("REWARDS")).Click();
-                old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
-                FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[4]/div[1]").Click();
-                Thread.Sleep(1000);
-
-                if (old_RP >= 1520 && old_RP < 2800) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[3]/div[2]/div[3]/button").Click();}
-                if (old_RP >= 2800 && old_RP < 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[2]/div[2]/div[3]/button").Click();}
-                if (old_RP >= 4400) { FandS(driver, "//*[@id='fp_bonus_rewards']/div[1]/div[2]/div[3]/button").Click();}
-                //driver.Navigate().GoToUrl("https://freebitco.in/");
-
-                //if (old_RP >= 1520 && old_RP < 2800) { UpdateLog2("Активируем бонус за 320 на счету " + old_RP + "RP"); }
-                //if (old_RP >= 2800 && old_RP < 4400) { UpdateLog2("Активируем бонус за 1600 на счету " + old_RP + "RP"); }
-                //if (old_RP >= 4400) { UpdateLog2("Активируем бонус за 3200 на счету " + old_RP + "RP"); }
+                UpdateLog2("сбой активации бонусов");
             }
-
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
-            driver.FindElement(By.PartialLinkText("FREE BTC")).Click();
-
 
         }
 
@@ -1189,7 +1260,8 @@ namespace Fuset
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Proxy_list (id INTEGER PRIMARY KEY, proxy TEXT, usage BOOL)";
                 m_sqlCmd.ExecuteNonQuery();
 
-
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Balance (id INTEGER PRIMARY KEY, satoshi INTEGER)";
+                m_sqlCmd.ExecuteNonQuery();
 
             }
             catch (SQLiteException ex)
@@ -1290,7 +1362,7 @@ namespace Fuset
                 driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
                 driver.Navigate().GoToUrl("https://freebitco.in/");
 
-                multiply(driver);
+                write_balance(driver, Convert.ToInt32(textBox5.Text));
             });
         }
 
