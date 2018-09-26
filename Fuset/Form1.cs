@@ -61,6 +61,7 @@ namespace Fuset
                 sqlite_datareader.GetInt32(0);
                 sqlite_datareader.Close();
                 m_sqlCmd.CommandText = "update Balance set satoshi = " + balance + " where ID = " + i;
+                m_sqlCmd.ExecuteNonQuery();
             }
             catch (System.InvalidOperationException)
             {
@@ -85,15 +86,22 @@ namespace Fuset
             {
                 try
                 {
+                    
                     FandS(driver, "REQUIREMENTS TO UNLOCK BONUSES").Click();
                     Thread.Sleep(1000);
                     FandS(driver, "//*[@id='unblock_modal_rp_bonuses_container']/div[1]").Click();
                     Thread.Sleep(1000);
-                    UpdateLog2(FandS(driver, "option_container_buy_lottery").Text);
+                    //UpdateLog2(FandS(driver, "option_container_buy_lottery").Text);
 
                     words = FandS(driver, "option_container_buy_lottery").Text.Split(new char[] { ' ' });
-                    UpdateLog2(words[1]);
+                    //UpdateLog2(words[1]);
                     wager = Convert.ToDouble(words[1].Replace(".", ","));
+
+                    if (wager >= 0.00002000)
+                    {
+                        wager = 0.00002000;
+                    }
+
                     UpdateLog2(Convert.ToString(wager));
 
                     driver.Navigate().Refresh();
@@ -112,10 +120,27 @@ namespace Fuset
                         if (luz_num >= 5)
                         {
                             result = result * 2;
-                            
-                            driver.FindElement(By.Id("double_your_btc_stake")).Clear();
-                            driver.FindElement(By.Id("double_your_btc_stake")).SendKeys(result.ToString("F8").Replace("-", "").Replace(",", "."));
-                            //Thread.Sleep(200);
+
+                            //UpdateLog2(words[0]);
+
+
+                            if (words[0] == driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[1]")).Text)
+                            {
+                                while (words[0] == driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[1]")).Text)
+                                {
+                                    //UpdateLog2(words[0]);
+                                    Thread.Sleep(1000);
+                                }
+                            }
+                            else
+                            {
+                                driver.FindElement(By.Id("double_your_btc_stake")).Clear();
+                                driver.FindElement(By.Id("double_your_btc_stake")).SendKeys(result.ToString("F8").Replace("-", "").Replace(",", "."));
+                                //Thread.Sleep(1000);
+                                words[0] = driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[1]")).Text;
+                                Thread.Sleep(1000);
+                                driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                            }
                         }
                         else
                         {
@@ -123,8 +148,9 @@ namespace Fuset
                             driver.FindElement(By.Id("double_your_btc_stake")).Clear();
                             driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
                             //Thread.Sleep(200);
+                            driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
                         }
-                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                        
                         Thread.Sleep(400);
                         result = Convert.ToDouble(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ","));
 
@@ -148,6 +174,7 @@ namespace Fuset
                 }
                 catch (Exception)
                 {
+                    UpdateLog2("исключение");
                     return 3600;
                 }
                 return 10;
@@ -467,11 +494,11 @@ namespace Fuset
                 } while (true) ;
 
 
-            imageURL = new Uri(logoSRC);
+                imageURL = new Uri(logoSRC);
                 PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
                 logoSRC = Rucaptcha.Recognize(PuthToPicture);
 
-                if (logoSRC == "ERROR|TIMEOUT" || logoSRC == "ERROR_CAPTCHA_UNSOLVABLE")//ERROR_CAPTCHA_UNSOLVABLE
+                if (logoSRC.Length != 6)
                 {
                     UpdateLog2("ERROR_CAPTCHA_UNSOLVABLE");
                     return false;
@@ -537,6 +564,119 @@ namespace Fuset
             
             return false;
         }
+
+        public bool simple_captcha2(IWebDriver driver)
+        {
+            if (IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
+            {
+                logo = driver.FindElement(By.PartialLinkText("REWARDS")).Click();
+                logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
+                logoSRC = logo.GetAttribute("src");
+
+                imageURL = new Uri(logoSRC);
+                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                logoSRC = Rucaptcha.Recognize(PuthToPicture);
+
+                FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(logoSRC);
+
+                logo = FandS(driver, "//*[@id='botdetect_free_play_captcha2']/div[1]/img");
+                logoSRC = logo.GetAttribute("src");
+                imageURL = new Uri(logoSRC);
+                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                logoSRC = Rucaptcha.Recognize(PuthToPicture);
+                FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
+
+                miss += 4;
+                return true;
+
+
+                do
+                {
+                    try
+                    {
+                        logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
+                        logoSRC = logo.GetAttribute("src");
+                        break;
+                    }
+                    catch (System.NullReferenceException)
+                    {
+                        Thread.Sleep(500);
+                        continue;
+                    }
+                } while (true);
+
+
+                imageURL = new Uri(logoSRC);
+                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                logoSRC = Rucaptcha.Recognize(PuthToPicture);
+
+                if (logoSRC.Length != 6)
+                {
+                    UpdateLog2("ERROR_CAPTCHA_UNSOLVABLE");
+                    return false;
+                }
+                else
+                {
+                    FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(logoSRC);
+
+                    logo = FandS(driver, "//*[@id='botdetect_free_play_captcha2']/div[1]/img");
+                    logoSRC = logo.GetAttribute("src");
+                    imageURL = new Uri(logoSRC);
+                    PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                    logoSRC = Rucaptcha.Recognize(PuthToPicture);
+                    FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
+
+                    miss += 4;
+                    return true;
+                }
+
+
+
+            }
+            if (!IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
+            {
+                FandS(driver, "switch_captchas_button").Click();
+
+                logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
+                try
+                {
+                    logoSRC = logo.GetAttribute("src");
+                }
+                catch (NullReferenceException)
+                {
+
+                    return false;
+                }
+
+                imageURL = new Uri(logoSRC);
+                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                logoSRC = Rucaptcha.Recognize(PuthToPicture);
+
+                if (logoSRC == "ERROR | TIMEOUT")
+                {
+                    UpdateLog2("ERROR | TIMEOUT");
+
+                    return false;
+                }
+                else
+                {
+                    FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(logoSRC);
+
+                    logo = FandS(driver, "//*[@id='botdetect_free_play_captcha2']/div[1]/img");
+                    logoSRC = logo.GetAttribute("src");
+                    imageURL = new Uri(logoSRC);
+                    PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+                    logoSRC = Rucaptcha.Recognize(PuthToPicture);
+                    FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
+
+                    miss += 3;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
 
         public void Rucaptchav2(IWebDriver driver)
         {
@@ -1016,14 +1156,14 @@ namespace Fuset
                         if (!IsElementVisible(FandS(driver, "deposit_withdraw_container")))                                                 //Загрузилось страница ошибки
                         {
                             load_falls++;
-                            UpdateLog2("freebitco.in не загружена(" + load_falls + ")" + driver.FindElement(By.CssSelector(".error-code")).Text);
+                            //UpdateLog2("freebitco.in не загружена(" + load_falls + ")" + driver.FindElement(By.CssSelector(".error-code")).Text);
                         }
                         else                                                                                                                //Загрузилось freebitco.in
                         {
                             try
                             {
                                 IWebElement dynamicElement = (new WebDriverWait(driver, TimeSpan.FromSeconds(10))).Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
-                                UpdateLog2("Кулдаун загрузился " + Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 61);
+                                //UpdateLog2("Кулдаун загрузился " + Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 61);
                                 timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
                                 driver.Quit();
                                 busy = false;
@@ -1034,12 +1174,12 @@ namespace Fuset
                                 UpdateLog2("Кулдаун не найден.");
                                 if (IsElementVisible(FandS(driver, "free_play_form_button")))
                                 {
-                                    UpdateLog2("кнопка сбора найдена");
+                                    //UpdateLog2("кнопка сбора найдена");
                                     break;
                                 }
                                 else
                                 {
-                                    UpdateLog2("кнопка сбора не найдена");
+                                    //UpdateLog2("кнопка сбора не найдена");
                                 }
                             }
                         }
@@ -1049,7 +1189,7 @@ namespace Fuset
                     catch (WebDriverException)
                     {
                         load_falls++;
-                        UpdateLog2("страница не загружена - " + load_falls + " раз.");
+                        //UpdateLog2("страница не загружена - " + load_falls + " раз.");
                         continue;
                     }
                 } while (load_falls < 10);                      //Модуль загрузки страницы
@@ -1058,19 +1198,20 @@ namespace Fuset
                 {
                     if (load_falls >= 10)
                     {
-                        UpdateLog2("Количество попыток загрузки 10, меняем прокси (" + data_get_proxy(i) + ")");
+                        //UpdateLog2("Количество попыток загрузки 10, меняем прокси (" + data_get_proxy(i) + ")");
                         m_sqlCmd.CommandText = "update Proxy_list set usage = 2 where proxy = '" + data_get_proxy(i) + "'";
                         m_sqlCmd.ExecuteNonQuery();
                     }
                     if (IsElementVisible(FandS(driver, "multi_acct_same_ip")))
-                        UpdateLog2("Ошибка сбора (" + FandS(driver, "multi_acct_same_ip").Text + ")");
+                        //UpdateLog2("Ошибка сбора (" + FandS(driver, "multi_acct_same_ip").Text + ")");
                     proxy_change(i);
                     timing_list[i] = 10;
                     driver.Quit();
                     busy = false;
                     return;
                 }
-                
+
+                write_balance(driver, i);
 
                 do
                 {
@@ -1079,9 +1220,28 @@ namespace Fuset
                         FandS(driver, "play_without_captchas_button").Click();
                         RP_cost = Convert.ToInt32(FandS(driver, "//*[@id='play_without_captcha_desc']/div/p[2]/span").Text);
 
-                        if (RP_cost <= 5)
+                        if (RP_cost <= 5 || checkBox3.Checked)
                         {
-                            continue;
+                            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+
+                            driver.FindElement(By.PartialLinkText("REWARDS")).Click();
+                            old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
+
+                            if (old_RP >= RP_cost)
+                            {
+                                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+
+                                driver.FindElement(By.PartialLinkText("FREE BTC")).Click();
+                                continue;
+                            }
+                            else
+                            {
+                                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+
+                                driver.FindElement(By.PartialLinkText("FREE BTC")).Click();
+                                FandS(driver, "play_with_captcha_button").Click();
+                                RP_cost = 0;
+                            }
                         }
                         else
                         {
@@ -1333,37 +1493,10 @@ namespace Fuset
             //DataGridUpdate();
         }
 
-        public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
+        public void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            await Task.Run(() =>
-            {
-
-                if (textBox5.Text.Length == 0)
-                {
-                    MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
-                    return;
-                }
-
-
-                options = new ChromeOptions();
-                Proxy proxy = new Proxy();
-                proxy.Kind = ProxyKind.Manual;
-                proxy.IsAutoDetect = false;
-                proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-                proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-                options.Proxy = proxy;
-                options.AddArgument("ignore-certificate-errors");
-                
-
-                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
-                options.AddArguments("--start-maximized");
-                IWebDriver driver = new ChromeDriver(options);
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-                driver.Navigate().GoToUrl("https://freebitco.in/");
-
-                write_balance(driver, Convert.ToInt32(textBox5.Text));
-            });
+            string s = "capch";
+            UpdateLog2(Convert.ToString(s.Length));
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
