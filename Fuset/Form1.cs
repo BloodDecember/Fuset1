@@ -102,8 +102,6 @@ namespace Fuset
                         wager = 0.00002000;
                     }
 
-                    UpdateLog2(Convert.ToString(wager));
-
                     driver.Navigate().Refresh();
 
                     driver.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
@@ -120,10 +118,7 @@ namespace Fuset
                         if (luz_num >= 5)
                         {
                             result = result * 2;
-
-                            //UpdateLog2(words[0]);
-
-
+                            
                             if (words[0] == driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[1]")).Text)
                             {
                                 while (words[0] == driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[1]")).Text)
@@ -182,6 +177,119 @@ namespace Fuset
             return 3600;
         }
 
+        public async void multiply2(int i)
+        {
+            await Task.Run(() =>
+            {
+                string[] words;
+                double result = 0.00000001;
+                int luz_num = 0;
+                double wager;
+                string roll = "0";
+                int roll_wait = 0;
+
+                options = new ChromeOptions();
+                Proxy proxy = new Proxy();
+                proxy.Kind = ProxyKind.Manual;
+                proxy.IsAutoDetect = false;
+                proxy.HttpProxy = data_get_proxy(i);
+                proxy.SslProxy = data_get_proxy(i);
+                options.Proxy = proxy;
+                options.AddArgument("ignore-certificate-errors");
+                //options.AddArgument("--headless");
+
+                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
+                options.AddArguments("--start-maximized");
+                IWebDriver driver = new ChromeDriver(options);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                driver.Navigate().GoToUrl("https://freebitco.in/");
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+
+                if (Convert.ToInt32(driver.FindElement(By.Id("balance")).Text.Replace(".", "")) < 30000)
+                {
+                    return;
+                }
+
+                try
+                {
+                    wait.Until(ExpectedConditions.ElementIsVisible(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
+                    driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
+
+                    wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")));
+                    driver.FindElement(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")).Click();
+
+                    wait.Until(ExpectedConditions.ElementIsVisible(By.Id("option_container_buy_lottery")));
+                    words = driver.FindElement(By.Id("option_container_buy_lottery")).Text.Split(new char[] { ' ' });
+                    wager = Convert.ToDouble(words[1].Replace(".", ","));
+                }
+                catch (WebDriverTimeoutException)
+                {
+                    wager = 0.00000010;
+                }
+
+                if (wager >= 0.00002000)
+                {
+                    wager = 0.00002000;
+                }
+
+                driver.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
+
+
+                do
+                {
+                    
+
+                    if (luz_num >= 5)
+                    {
+                        result = result * 2;
+
+                        driver.FindElement(By.Id("double_your_btc_stake")).Clear();
+                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys(result.ToString("F8").Replace("-", "").Replace(",", "."));
+                        roll = driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text;
+                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                    }
+                    else
+                    {
+                        driver.FindElement(By.Id("double_your_btc_stake")).Clear();
+                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
+                        roll = driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text;
+                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                    }
+
+                    while (roll == driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text && roll_wait < 20)
+                    {
+                        Thread.Sleep(200);
+                        roll_wait++;
+
+                    }
+                    roll_wait = 0;
+
+
+
+                    result = Convert.ToDouble(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ","));
+                    if (driver.FindElement(By.Id("double_your_btc_bet_lose")).Displayed)
+                    {
+                        luz_num++;
+                        wager += result;
+                    }
+                    if (driver.FindElement(By.Id("double_your_btc_bet_win")).Displayed)
+                    {
+                        luz_num = 0;
+                        
+                        wager -= result;
+                    }
+
+                } while (wager >= 0 || luz_num != 0);
+
+                timing_list[i] = 10;
+                driver.Quit();
+            });
+
+
+        }
+        
         public void send_vk(string text, IWebDriver driver)
         {
             ((IJavaScriptExecutor)driver).ExecuteScript("window.open()");
@@ -434,6 +542,11 @@ namespace Fuset
         
         public string data_get_proxy(int id_prof)
         {
+            if (id_prof == 777)
+            {
+                return " ";
+            }
+
             m_sqlCmd = m_dbConn.CreateCommand();
             m_sqlCmd.CommandText = "SELECT proxy FROM Setting WHERE id = " + id_prof;
             sqlite_datareader = m_sqlCmd.ExecuteReader();
@@ -463,6 +576,11 @@ namespace Fuset
 
         public string data_get_prof(int id_prof)
         {
+            if (id_prof == 777)
+            {
+                return "7";
+            }
+
             m_sqlCmd = m_dbConn.CreateCommand();
             m_sqlCmd.CommandText = "SELECT prof FROM Setting WHERE id = " + id_prof;
             sqlite_datareader = m_sqlCmd.ExecuteReader();
@@ -567,114 +685,13 @@ namespace Fuset
 
         public bool simple_captcha2(IWebDriver driver)
         {
-            if (IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
-            {
-                logo = driver.FindElement(By.PartialLinkText("REWARDS")).Click();
-                logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
-                logoSRC = logo.GetAttribute("src");
+            Uri imageURL = new Uri(driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")).GetAttribute("src"));
 
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                logoSRC = Rucaptcha.Recognize(PuthToPicture);
+            PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
 
-                FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(logoSRC);
-
-                logo = FandS(driver, "//*[@id='botdetect_free_play_captcha2']/div[1]/img");
-                logoSRC = logo.GetAttribute("src");
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                logoSRC = Rucaptcha.Recognize(PuthToPicture);
-                FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
-
-                miss += 4;
-                return true;
-
-
-                do
-                {
-                    try
-                    {
-                        logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
-                        logoSRC = logo.GetAttribute("src");
-                        break;
-                    }
-                    catch (System.NullReferenceException)
-                    {
-                        Thread.Sleep(500);
-                        continue;
-                    }
-                } while (true);
-
-
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                logoSRC = Rucaptcha.Recognize(PuthToPicture);
-
-                if (logoSRC.Length != 6)
-                {
-                    UpdateLog2("ERROR_CAPTCHA_UNSOLVABLE");
-                    return false;
-                }
-                else
-                {
-                    FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(logoSRC);
-
-                    logo = FandS(driver, "//*[@id='botdetect_free_play_captcha2']/div[1]/img");
-                    logoSRC = logo.GetAttribute("src");
-                    imageURL = new Uri(logoSRC);
-                    PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                    logoSRC = Rucaptcha.Recognize(PuthToPicture);
-                    FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
-
-                    miss += 4;
-                    return true;
-                }
-
-
-
-            }
-            if (!IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
-            {
-                FandS(driver, "switch_captchas_button").Click();
-
-                logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
-                try
-                {
-                    logoSRC = logo.GetAttribute("src");
-                }
-                catch (NullReferenceException)
-                {
-
-                    return false;
-                }
-
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                logoSRC = Rucaptcha.Recognize(PuthToPicture);
-
-                if (logoSRC == "ERROR | TIMEOUT")
-                {
-                    UpdateLog2("ERROR | TIMEOUT");
-
-                    return false;
-                }
-                else
-                {
-                    FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(logoSRC);
-
-                    logo = FandS(driver, "//*[@id='botdetect_free_play_captcha2']/div[1]/img");
-                    logoSRC = logo.GetAttribute("src");
-                    imageURL = new Uri(logoSRC);
-                    PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                    logoSRC = Rucaptcha.Recognize(PuthToPicture);
-                    FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
-
-                    miss += 3;
-                    return true;
-                }
-            }
-
-            return false;
+            driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
+                
+            return true;
         }
 
 
@@ -1261,7 +1278,9 @@ namespace Fuset
                     {
                         //send_vk("текстовая капча недоступна", driver);
                         UpdateLog2("текстовая капча недоступна");
-                        timing_list[i] = multiply(driver);
+                        //timing_list[i] = multiply(driver);
+                        timing_list[i] = 10000;
+                        multiply2(i);
                         driver.Quit();
                         busy = false;
                         return;
@@ -1495,8 +1514,7 @@ namespace Fuset
 
         public void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            string s = "capch";
-            UpdateLog2(Convert.ToString(s.Length));
+            multiply2(777);
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
