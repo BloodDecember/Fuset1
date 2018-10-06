@@ -48,22 +48,23 @@ namespace Fuset
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
 
-        public static void KillPaint()
+        public static void KillPaint(string name)
         {
             System.Diagnostics.Process[] procs = null;
 
             try
             {
-                procs = Process.GetProcessesByName("chromedriver");
+                procs = Process.GetProcessesByName(name);
 
-                Process mspaintProc = procs[0];
-
-                if (!mspaintProc.HasExited)
+                foreach (var item in procs)
                 {
-                    mspaintProc.Kill();
-                    mspaintProc.Dispose();
-                    mspaintProc.Close();
+                    if (!item.HasExited)
+                    {
+                        item.Kill();
+                    }
                 }
+                 
+                
             }
             finally
             {
@@ -240,15 +241,15 @@ namespace Fuset
 
                 options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
                 options.AddArguments("--start-maximized");
-                IWebDriver driver = new ChromeDriver(options);
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                driver1 = new ChromeDriver(options);
+                driver1.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                WebDriverWait wait = new WebDriverWait(driver1, TimeSpan.FromSeconds(10));
 
                 do
                 {
                     try
                     {
-                        driver.Navigate().GoToUrl("https://freebitco.in/");
+                        driver1.Navigate().GoToUrl("https://freebitco.in/");
                         luz_num = 0;
                     }
                     catch (Exception)
@@ -261,18 +262,18 @@ namespace Fuset
                 {
                     UpdateLog2("страница мультиплэя не загрузилась с 10 попыток");
                     timing_list[i] = 3600;
-                    driver.Quit();
+                    driver1.Quit();
                     multiply_busy = false;
                 }
 
-                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+                ((IJavaScriptExecutor)driver1).ExecuteScript("arguments[0].setAttribute('style','display');", driver1.FindElement(By.CssSelector(".large-12.fixed")));
 
-                int old_btc = Convert.ToInt32(driver.FindElement(By.Id("balance")).Text.Replace(".", ""));
+                int old_btc = Convert.ToInt32(driver1.FindElement(By.Id("balance")).Text.Replace(".", ""));
 
                 if (old_btc < 30000)
                 {
                     timing_list[i] = 3600;
-                    driver.Quit();
+                    driver1.Quit();
                     multiply_busy = false;
                 }
 
@@ -280,13 +281,13 @@ namespace Fuset
                 try
                 {
                     wait.Until(ExpectedConditions.ElementIsVisible(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
-                    driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
+                    driver1.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
 
                     wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")));
-                    driver.FindElement(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")).Click();
+                    driver1.FindElement(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")).Click();
 
                     wait.Until(ExpectedConditions.ElementIsVisible(By.Id("option_container_buy_lottery")));
-                    words = driver.FindElement(By.Id("option_container_buy_lottery")).Text.Split(new char[] { ' ' });
+                    words = driver1.FindElement(By.Id("option_container_buy_lottery")).Text.Split(new char[] { ' ' });
                     wager = Convert.ToDouble(words[1].Replace(".", ","));
                     old_wager = Convert.ToInt32(words[1].Replace(".", ""));
 
@@ -303,7 +304,7 @@ namespace Fuset
                     old_wager = 2000;
                 }
 
-                driver.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
+                driver1.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
                 do
                 {
                     
@@ -312,28 +313,28 @@ namespace Fuset
                     {
                         result = result * 2;
 
-                        driver.FindElement(By.Id("double_your_btc_stake")).Clear();
-                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys(result.ToString("F8").Replace("-", "").Replace(",", "."));
-                        roll = driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text;
-                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                        driver1.FindElement(By.Id("double_your_btc_stake")).Clear();
+                        driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys(result.ToString("F8").Replace("-", "").Replace(",", "."));
+                        roll = driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text;
+                        driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
                     }
                     else
                     {
-                        driver.FindElement(By.Id("double_your_btc_stake")).Clear();
-                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
+                        driver1.FindElement(By.Id("double_your_btc_stake")).Clear();
+                        driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
                         try
                         {
-                            roll = driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text;
+                            roll = driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text;
                         }
                         catch (NoSuchElementException)
                         {
                             roll = "0";
                             Thread.Sleep(5000);
                         }
-                        driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                        driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
                     }
 
-                    while (roll == driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text && roll_wait < 20)
+                    while (roll == driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text && roll_wait < 20)
                     {
                         Thread.Sleep(200);
                         roll_wait++;
@@ -343,13 +344,13 @@ namespace Fuset
 
 
 
-                    result = Convert.ToDouble(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ","));
-                    if (driver.FindElement(By.Id("double_your_btc_bet_lose")).Displayed)
+                    result = Convert.ToDouble(driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ","));
+                    if (driver1.FindElement(By.Id("double_your_btc_bet_lose")).Displayed)
                     {
                         luz_num++;
                         wager += result;
                     }
-                    if (driver.FindElement(By.Id("double_your_btc_bet_win")).Displayed)
+                    if (driver1.FindElement(By.Id("double_your_btc_bet_win")).Displayed)
                     {
                         luz_num = 0;
                         
@@ -358,7 +359,7 @@ namespace Fuset
 
                 } while (wager >= 0 || luz_num != 0);
 
-                int new_btc = Convert.ToInt32(driver.FindElement(By.Id("balance")).Text.Replace(".", "")) - old_btc;
+                int new_btc = Convert.ToInt32(driver1.FindElement(By.Id("balance")).Text.Replace(".", "")) - old_btc;
 
                 m_sqlCmd.CommandText = "INSERT INTO Multiply_stat ('id_prof', 'result', 'wager', 'date') values ('" + i + "', '" + new_btc + "', '" + old_wager + "', '" + DateTime.Now + "' )";
 
@@ -366,7 +367,7 @@ namespace Fuset
 
 
                 timing_list[i] = 10;
-                driver.Quit();
+                driver1.Quit();
                 multiply_busy = false;
             });
 
@@ -454,31 +455,6 @@ namespace Fuset
 
 
             } while (id_num <= 400);
-
-            //пинг
-
-            //foreach (string server in serversList)
-            //{
-            //    pingReply = ping.Send(server);
-
-            //    if (pingReply.Status != IPStatus.TimedOut)
-            //    {
-            //        tw.WriteLine(server + "\t server"); //server
-            //        tw.WriteLine(pingReply.Address + "\t IP"); //IP
-            //        tw.WriteLine(pingReply.Status + "\t Статус"); //Статус
-            //        tw.WriteLine(pingReply.RoundtripTime + "\t Время ответа"); //Время ответа
-            //        tw.WriteLine(pingReply.Options.Ttl + "\t TTL"); //TTL
-            //        tw.WriteLine(pingReply.Options.DontFragment + "\t Фрагментирование"); //Фрагментирование
-            //        tw.WriteLine(pingReply.Buffer.Length + "\t Размер буфера"); //Размер буфера
-            //        tw.WriteLine();
-            //    }
-            //    else
-            //    {
-            //        tw.WriteLine(server); //server
-            //        tw.WriteLine(pingReply.Status);
-            //        tw.WriteLine();
-            //    }
-            //}
         }
 
         public void proxy_change(int id_prof)
@@ -1486,6 +1462,20 @@ namespace Fuset
                     Step2(i);
                     }
 
+                    //if (timing_list[i] <= -1800)
+                    //{
+                    //try
+                    //{
+                    //    driver.Quit();
+                    //    driver1.Quit();
+                    //}
+                    //catch (NullReferenceException)
+                    //{
+                        
+                    //}
+                    //Application.Restart();
+                    //break;
+                    //}
                 }
                 foreach (var item in timing_list)
                 {
@@ -1596,10 +1586,15 @@ namespace Fuset
 
         public void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            //Application.Restart();
-            //KillPaint();
-            driver.Quit();
-            busy = false;
+            //KillPaint("chrome");
+            //KillPaint("chromedriver");
+            Process[] runningProcessByName = Process.GetProcessesByName("Fuset");
+            //var runningProcessByName = Processes.GetProcessByName("iexplore");
+            if (runningProcessByName.Length != 0)
+            {
+                //Process.Start("iexplore.exe");
+                UpdateLog2("запущен");
+            }
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
