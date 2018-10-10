@@ -373,7 +373,36 @@ namespace Fuset
 
 
         }
-        
+
+        public bool solve_text(IWebDriver driver, IWebElement image, IWebElement field)
+        {
+            Uri imageURL = new Uri(image.GetAttribute("src"));
+
+            PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+
+            string solve = Rucaptcha.Recognize(PuthToPicture);
+
+            foreach (var item in solve)
+            {
+                Convert.ToInt32(item);
+                if (item >= 48 && item <= 57)
+                {
+                    UpdateLog2("эта капча " + solve + " содержит числа");
+                    return false;
+                }
+            }
+
+            if (solve.Length != 6)
+            {
+                UpdateLog2("эта капча " + solve + " не из 6 символов");
+                return false;
+            }
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", field);
+            field.SendKeys(solve);
+
+            return true;
+        }
 
         public void send_vk(string text, IWebDriver driver)
         {
@@ -766,12 +795,87 @@ namespace Fuset
 
         public bool simple_captcha2(IWebDriver driver)
         {
-            Uri imageURL = new Uri(driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")).GetAttribute("src"));
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            bool first = true;
 
-            PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
+            if (!IsElementVisible(driver.FindElement(By.Id("free_play_double_captchas"))))
+            {
+                driver.FindElement(By.Id("switch_captchas_button")).Click();
+            }
 
-            driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")).SendKeys(Rucaptcha.Recognize(PuthToPicture));
-                
+            wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")));
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")));
+            
+            do
+            {
+                try
+                {
+                    logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
+                    logoSRC = logo.GetAttribute("src");
+                    break;
+                }
+                catch (System.NullReferenceException)
+                {
+                    Thread.Sleep(500);
+                    continue;
+                }
+            } while (true);//ожидание загрузки изображения капчи
+            
+            while (!solve_text(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]"))))
+            {
+                if (!first)
+                {
+                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[2]/p[3]")).Click();
+                    Thread.Sleep(500);
+                }
+
+                do
+                {
+                    try
+                    {
+                        logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
+                        logoSRC = logo.GetAttribute("src");
+                        break;
+                    }
+                    catch (System.NullReferenceException)
+                    {
+                        Thread.Sleep(500);
+                        continue;
+                    }
+                } while (true);//ожидание загрузки изображения капчи
+
+                first = false;
+
+            }
+
+            while (!solve_text(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/input[2]"))))
+            {
+                if (!first)
+                {
+                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[2]/p[3]/i")).Click();
+                    Thread.Sleep(500);
+                }
+
+                do
+                {
+                    try
+                    {
+                        logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[1]/img"));
+                        logoSRC = logo.GetAttribute("src");
+                        break;
+                    }
+                    catch (System.NullReferenceException)
+                    {
+                        Thread.Sleep(500);
+                        continue;
+                    }
+                } while (true);//ожидание загрузки изображения капчи
+
+                first = false;
+
+            }
+            
             return true;
         }
 
@@ -1328,10 +1432,16 @@ namespace Fuset
                             RP_cost = 0;
                         }
                     }
-
-                    if (IsElementVisible(FandS(driver, "switch_captchas_button")))
+                    try
                     {
-                        simple_captcha(driver);
+                        if (IsElementVisible(driver.FindElement(By.Id("switch_captchas_button"))))
+                        {
+                            simple_captcha2(driver);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        
                     }
 
                     if (IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
@@ -1533,6 +1643,10 @@ namespace Fuset
             Rucaptcha.Key = textBox1.Text;
             get_timing_list();
 
+            if (Properties.Settings.Default.autostart)
+            {
+                checkBox4.Checked = true;
+            }
             
         }
 
@@ -1588,13 +1702,33 @@ namespace Fuset
         {
             //KillPaint("chrome");
             //KillPaint("chromedriver");
-            Process[] runningProcessByName = Process.GetProcessesByName("Fuset");
-            //var runningProcessByName = Processes.GetProcessByName("iexplore");
-            if (runningProcessByName.Length != 0)
+            if (textBox5.Text.Length == 0)
             {
-                //Process.Start("iexplore.exe");
-                UpdateLog2("запущен");
+                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
+                return;
             }
+
+
+            options = new ChromeOptions();
+            Proxy proxy = new Proxy();
+            proxy.Kind = ProxyKind.Manual;
+            proxy.IsAutoDetect = false;
+            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+            options.Proxy = proxy;
+            options.AddArgument("ignore-certificate-errors");
+
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
+            options.AddArguments("--start-maximized");
+            driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+            driver.Navigate().GoToUrl("https://freebitco.in/");
+
+
+
+
+            simple_captcha2(driver);
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
@@ -1621,6 +1755,12 @@ namespace Fuset
                     add_good_proxy(line);
                 }
             }
+        }
+
+        private void checkBox4_CheckedChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.autostart = true;
+            Properties.Settings.Default.Save();
         }
     }
 }
