@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,9 +40,13 @@ namespace Fuset
         String logoSRC;
         Uri imageURL;
         List<int> timing_list = new List<int>();
+        List<int> multiply_list = new List<int>();
         ChromeOptions options;
         public IWebDriver driver;
         public IWebDriver driver1;
+        
+
+
 
         private String dbFileName = "sample.sqlite";
         private SQLiteConnection m_dbConn;
@@ -211,6 +216,37 @@ namespace Fuset
             return 3600;
         }
 
+        public void check_multiply(IWebDriver driver, int i)
+        {
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+
+            wait.Until(ExpectedConditions.ElementIsVisible(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
+            
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
+
+
+                driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
+                Thread.Sleep(1000);
+            try
+            {
+                driver.FindElement(By.PartialLinkText("REDEEM ALL RP BONUSES")).Click();
+
+                multiply2(i);
+                multiply_list.Add(i);
+                multiply_busy = true;
+
+                return;
+            }
+            catch (Exception)
+            {
+                throw;
+
+            }
+            
+        }
+
         public async void multiply2(int i)
         {
             if (multiply_busy)
@@ -298,11 +334,11 @@ namespace Fuset
                     wager = 0.00000010;
                 }
 
-                if (wager >= 0.00002000)
-                {
-                    wager = 0.00002000;
-                    old_wager = 2000;
-                }
+                //if (wager >= 0.00002000)
+                //{
+                //    wager = 0.00002000;
+                //    old_wager = 2000;
+                //}
 
                 driver1.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
                 do
@@ -365,10 +401,16 @@ namespace Fuset
 
                 m_sqlCmd.ExecuteNonQuery();
 
-
+                multiply_list.Remove(i);
                 timing_list[i] = 10;
+                
                 driver1.Quit();
                 multiply_busy = false;
+
+                if (multiply_list.Count != 0)
+                {
+                    multiply2(multiply_list[0]);
+                }
             });
 
 
@@ -1346,6 +1388,8 @@ namespace Fuset
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
                 //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
 
+
+
                 int load_falls = 0;
                 miss = 0;
                 do
@@ -1353,6 +1397,8 @@ namespace Fuset
                     try
                     {
                         driver.Navigate().GoToUrl("https://freebitco.in/");
+
+                        
 
                         if (!IsElementVisible(FandS(driver, "deposit_withdraw_container")))                                                 //Загрузилось страница ошибки
                         {
@@ -1366,6 +1412,8 @@ namespace Fuset
                                 IWebElement dynamicElement = (new WebDriverWait(driver, TimeSpan.FromSeconds(10))).Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
                                 //UpdateLog2("Кулдаун загрузился " + Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 61);
                                 timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
+                                
+
                                 driver.Quit();
                                 busy = false;
                                 return;
@@ -1448,6 +1496,7 @@ namespace Fuset
                     {
                         timing_list[i] = 10000;
                         multiply2(i);
+                        multiply_list.Add(i);
                         multiply_busy = true;
                         driver.Quit(); 
                         busy = false;
@@ -1474,7 +1523,22 @@ namespace Fuset
                         calculete(btcElement.Text, rpElement.Text, miss);
                         //UpdateLog2(btcElement.Text);
 
+                        
+
                         timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
+
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
+                        driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
+                        Thread.Sleep(1000);
+
+                        driver.FindElement(By.PartialLinkText("REDEEM ALL RP BONUSES")).Click();
+
+                        multiply2(i);
+                        multiply_list.Add(i);
+                        multiply_busy = true;
+
+
                         driver.Quit();
                         busy = false;
                         return;
@@ -1497,7 +1561,7 @@ namespace Fuset
                     driver.Navigate().Refresh();
                 }
                 while (IsElementVisible(FandS(driver, "free_play_form_button")));
-                
+
                 driver.Quit();
                 busy = false;
             });
@@ -1572,21 +1636,11 @@ namespace Fuset
                     Step2(i);
                     }
 
-                    //if (timing_list[i] <= -1800)
-                    //{
-                    //try
-                    //{
-                    //    driver.Quit();
-                    //    driver1.Quit();
-                    //}
-                    //catch (NullReferenceException)
-                    //{
-                        
-                    //}
-                    //Application.Restart();
-                    //break;
-                    //}
+                if (timing_list[i] <= -1800)
+                {
+                    this.Close();
                 }
+            }
                 foreach (var item in timing_list)
                 {
                 
@@ -1646,6 +1700,8 @@ namespace Fuset
             if (Properties.Settings.Default.autostart)
             {
                 checkBox4.Checked = true;
+                timer1.Start();
+                Go.Text = "Стапэ!";
             }
             
         }
@@ -1700,35 +1756,13 @@ namespace Fuset
 
         public void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            //KillPaint("chrome");
-            //KillPaint("chromedriver");
-            if (textBox5.Text.Length == 0)
+            foreach (var item in multiply_list)
             {
-                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
-                return;
+                UpdateLog2(item + "");
             }
 
+            UpdateLog2(multiply_list.Count + "");
 
-            options = new ChromeOptions();
-            Proxy proxy = new Proxy();
-            proxy.Kind = ProxyKind.Manual;
-            proxy.IsAutoDetect = false;
-            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-            options.Proxy = proxy;
-            options.AddArgument("ignore-certificate-errors");
-
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
-            options.AddArguments("--start-maximized");
-            driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-            driver.Navigate().GoToUrl("https://freebitco.in/");
-
-
-
-
-            simple_captcha2(driver);
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
@@ -1759,7 +1793,15 @@ namespace Fuset
 
         private void checkBox4_CheckedChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.autostart = true;
+            if (checkBox4.Checked)
+            {
+                Properties.Settings.Default.autostart = true;
+            }
+            else
+            {
+                Properties.Settings.Default.autostart = false;
+            }
+
             Properties.Settings.Default.Save();
         }
     }
