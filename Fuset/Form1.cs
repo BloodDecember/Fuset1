@@ -33,6 +33,8 @@ namespace Fuset
         int Time = 0;
         int miss = 0;
         int RP_cost = 0;
+        int stepped = 777;
+        int multed = 777;
         int RP_bonus_cost = 0;
         bool busy = false;
         bool multiply_busy = false;
@@ -219,7 +221,7 @@ namespace Fuset
         public void check_multiply(IWebDriver driver, int i)
         {
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
+            driver.Navigate().Refresh();
 
             wait.Until(ExpectedConditions.ElementIsVisible(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
             
@@ -228,190 +230,207 @@ namespace Fuset
 
 
                 driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
-                Thread.Sleep(1000);
+            //Thread.Sleep(1000);
             try
             {
-                driver.FindElement(By.PartialLinkText("REDEEM ALL RP BONUSES")).Click();
+                wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")));
+                driver.FindElement(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")).Click();
 
-                multiply2(i);
+                UpdateLog2("(" + i + ")Найдено условие разблокировки бонусов, поставлено в очередь мультика.");
                 multiply_list.Add(i);
-                multiply_busy = true;
-
+                
                 return;
             }
             catch (Exception)
             {
-                throw;
+                UpdateLog2("(" + i + ")Мультик не требуется.");
 
             }
-            
+
         }
 
         public async void multiply2(int i)
         {
-            if (multiply_busy)
-            {
-                timing_list[i] = 1000;
-                return;
-            }
-
-            await Task.Run(() =>
-            {
-                string[] words;
-                double result = 0.00000001;
-                int luz_num = 0;
-                double wager;
-                string roll = "0";
-                int roll_wait = 0;
-                int old_wager = 777;
-
-                options = new ChromeOptions();
-                Proxy proxy = new Proxy();
-                proxy.Kind = ProxyKind.Manual;
-                proxy.IsAutoDetect = false;
-                proxy.HttpProxy = data_get_proxy(i);
-                proxy.SslProxy = data_get_proxy(i);
-                options.Proxy = proxy;
-                options.AddArgument("ignore-certificate-errors");
-                //options.AddArgument("--headless");
-
-                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
-                options.AddArguments("--start-maximized");
-                driver1 = new ChromeDriver(options);
-                driver1.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                WebDriverWait wait = new WebDriverWait(driver1, TimeSpan.FromSeconds(10));
-
-                do
+                await Task.Run(() =>
                 {
+                try
+                {
+                    string[] words;
+                    double result = 0.00000001;
+                    int luz_num = 0;
+                    double wager;
+                    string roll = "0";
+                    int roll_wait = 0;
+                    int old_wager = 777;
+
+                    options = new ChromeOptions();
+                    Proxy proxy = new Proxy();
+                    proxy.Kind = ProxyKind.Manual;
+                    proxy.IsAutoDetect = false;
+                    proxy.HttpProxy = data_get_proxy(i);
+                    proxy.SslProxy = data_get_proxy(i);
+                    options.Proxy = proxy;
+                    options.AddArgument("ignore-certificate-errors");
+                    //options.AddArgument("--headless");
+
+                    options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
+                    options.AddArguments("--start-maximized");
+                    driver1 = new ChromeDriver(options);
+                    driver1.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                    WebDriverWait wait = new WebDriverWait(driver1, TimeSpan.FromSeconds(10));
+
+                    do
+                    {
+                        try
+                        {
+                            driver1.Navigate().GoToUrl("https://freebitco.in/");
+                            luz_num = 0;
+                        }
+                        catch (Exception)
+                        {
+                            luz_num++;
+                        }
+                    } while (luz_num != 0 || luz_num > 10);
+
+                    if (luz_num > 10)
+                    {
+                        UpdateLog2("страница мультиплэя не загрузилась с 10 попыток");
+                        timing_list[i] = 200;
+                        driver1.Quit();
+                        multiply_busy = false;
+                        multed = 777;
+                    }
+
+                    ((IJavaScriptExecutor)driver1).ExecuteScript("arguments[0].setAttribute('style','display');", driver1.FindElement(By.CssSelector(".large-12.fixed")));
+
+                    int old_btc = Convert.ToInt32(driver1.FindElement(By.Id("balance")).Text.Replace(".", ""));
+
+                    if (old_btc < 30000)
+                    {
+                        timing_list[i] = 3600;
+                        driver1.Quit();
+                        multiply_busy = false;
+                        multed = 777;
+                    }
+
+
                     try
                     {
-                        driver1.Navigate().GoToUrl("https://freebitco.in/");
-                        luz_num = 0;
+                        wait.Until(ExpectedConditions.ElementIsVisible(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
+                        driver1.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
+
+                        wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")));
+                        driver1.FindElement(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")).Click();
+
+                        wait.Until(ExpectedConditions.ElementIsVisible(By.Id("option_container_buy_lottery")));
+                        words = driver1.FindElement(By.Id("option_container_buy_lottery")).Text.Split(new char[] { ' ' });
+                        wager = Convert.ToDouble(words[1].Replace(".", ","));
+                        old_wager = Convert.ToInt32(words[1].Replace(".", ""));
+
+
                     }
                     catch (Exception)
                     {
-                        luz_num++;
+                        wager = 0.00000010;
                     }
-                } while (luz_num != 0 || luz_num > 10);
 
-                if (luz_num > 10)
-                {
-                    UpdateLog2("страница мультиплэя не загрузилась с 10 попыток");
-                    timing_list[i] = 3600;
-                    driver1.Quit();
-                    multiply_busy = false;
-                }
+                    //if (wager >= 0.00002000)
+                    //{
+                    //    wager = 0.00002000;
+                    //    old_wager = 2000;
+                    //}
 
-                ((IJavaScriptExecutor)driver1).ExecuteScript("arguments[0].setAttribute('style','display');", driver1.FindElement(By.CssSelector(".large-12.fixed")));
-
-                int old_btc = Convert.ToInt32(driver1.FindElement(By.Id("balance")).Text.Replace(".", ""));
-
-                if (old_btc < 30000)
-                {
-                    timing_list[i] = 3600;
-                    driver1.Quit();
-                    multiply_busy = false;
-                }
-
-
-                try
-                {
-                    wait.Until(ExpectedConditions.ElementIsVisible(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
-                    driver1.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
-
-                    wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")));
-                    driver1.FindElement(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")).Click();
-
-                    wait.Until(ExpectedConditions.ElementIsVisible(By.Id("option_container_buy_lottery")));
-                    words = driver1.FindElement(By.Id("option_container_buy_lottery")).Text.Split(new char[] { ' ' });
-                    wager = Convert.ToDouble(words[1].Replace(".", ","));
-                    old_wager = Convert.ToInt32(words[1].Replace(".", ""));
-
-
-                }
-                catch (WebDriverTimeoutException)
-                {
-                    wager = 0.00000010;
-                }
-
-                //if (wager >= 0.00002000)
-                //{
-                //    wager = 0.00002000;
-                //    old_wager = 2000;
-                //}
-
-                driver1.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
-                do
-                {
-                    
-
-                    if (luz_num >= 6)
+                    driver1.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
+                    do
                     {
-                        result = result * 2;
 
-                        driver1.FindElement(By.Id("double_your_btc_stake")).Clear();
-                        driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys(result.ToString("F8").Replace("-", "").Replace(",", "."));
-                        roll = driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text;
-                        driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
-                    }
-                    else
-                    {
-                        driver1.FindElement(By.Id("double_your_btc_stake")).Clear();
-                        driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
+
+                        if (luz_num >= 6)
+                        {
+                            result = result * 2;
+
+                            driver1.FindElement(By.Id("double_your_btc_stake")).Clear();
+                            driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys(result.ToString("F8").Replace("-", "").Replace(",", "."));
+                            roll = driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text;
+                            driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                        }
+                        else
+                        {
+                            driver1.FindElement(By.Id("double_your_btc_stake")).Clear();
+                            driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys("d");
+                            try
+                            {
+                                roll = driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text;
+                            }
+                            catch (NoSuchElementException)
+                            {
+                                roll = "0";
+                                Thread.Sleep(5000);
+                            }
+                            driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
+                        }
+
+
                         try
                         {
-                            roll = driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text;
+                            while (roll == driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text && roll_wait < 20)
+                            {
+                                Thread.Sleep(200);
+                                roll_wait++;
+
+                            }
                         }
-                        catch (NoSuchElementException)
+                        catch (Exception)
                         {
-                            roll = "0";
-                            Thread.Sleep(5000);
+                            timing_list[i] = 10;
+
+                            driver1.Quit();
+                            multiply_busy = false;
+                            multed = 777;
                         }
-                        driver1.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
-                    }
+                        roll_wait = 0;
 
-                    while (roll == driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[4]")).Text && roll_wait < 20)
+
+
+                        result = Convert.ToDouble(driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ","));
+                        if (driver1.FindElement(By.Id("double_your_btc_bet_lose")).Displayed)
+                        {
+                            luz_num++;
+                            wager += result;
+                        }
+                        if (driver1.FindElement(By.Id("double_your_btc_bet_win")).Displayed)
+                        {
+                            luz_num = 0;
+
+                            wager -= result;
+                        }
+
+                    } while (wager >= 0 || luz_num != 0);
+
+                    int new_btc = Convert.ToInt32(driver1.FindElement(By.Id("balance")).Text.Replace(".", "")) - old_btc;
+
+                    m_sqlCmd.CommandText = "INSERT INTO Multiply_stat ('id_prof', 'result', 'wager', 'date') values ('" + i + "', '" + new_btc + "', '" + old_wager + "', '" + DateTime.Now + "' )";
+
+                    m_sqlCmd.ExecuteNonQuery();
+
+                    multiply_list.Remove(i);
+                    timing_list[i] = 10;
+
+                    driver1.Quit();
+                    multiply_busy = false;
+                    multed = 777;
+                    }
+                    catch (Exception ex)
                     {
-                        Thread.Sleep(200);
-                        roll_wait++;
-
+                        UpdateLog2("Ошибка мультика" + ex);
+                        timing_list[i] = 10;
+                        driver1.Quit();
+                        multiply_busy = false;
+                        multed = 777;
                     }
-                    roll_wait = 0;
+                });
 
-
-
-                    result = Convert.ToDouble(driver1.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ","));
-                    if (driver1.FindElement(By.Id("double_your_btc_bet_lose")).Displayed)
-                    {
-                        luz_num++;
-                        wager += result;
-                    }
-                    if (driver1.FindElement(By.Id("double_your_btc_bet_win")).Displayed)
-                    {
-                        luz_num = 0;
-                        
-                        wager -= result;
-                    }
-
-                } while (wager >= 0 || luz_num != 0);
-
-                int new_btc = Convert.ToInt32(driver1.FindElement(By.Id("balance")).Text.Replace(".", "")) - old_btc;
-
-                m_sqlCmd.CommandText = "INSERT INTO Multiply_stat ('id_prof', 'result', 'wager', 'date') values ('" + i + "', '" + new_btc + "', '" + old_wager + "', '" + DateTime.Now + "' )";
-
-                m_sqlCmd.ExecuteNonQuery();
-
-                multiply_list.Remove(i);
-                timing_list[i] = 10;
-                
-                driver1.Quit();
-                multiply_busy = false;
-
-                if (multiply_list.Count != 0)
-                {
-                    multiply2(multiply_list[0]);
-                }
-            });
+            
 
 
         }
@@ -838,7 +857,7 @@ namespace Fuset
         public bool simple_captcha2(IWebDriver driver)
         {
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            bool first = true;
+            
 
             if (!IsElementVisible(driver.FindElement(By.Id("free_play_double_captchas"))))
             {
@@ -866,11 +885,9 @@ namespace Fuset
             
             while (!solve_text(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]"))))
             {
-                if (!first)
-                {
-                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[2]/p[3]")).Click();
-                    Thread.Sleep(500);
-                }
+                
+                driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[2]/p[3]")).Click();
+                Thread.Sleep(1000);
 
                 do
                 {
@@ -886,19 +903,15 @@ namespace Fuset
                         continue;
                     }
                 } while (true);//ожидание загрузки изображения капчи
-
-                first = false;
+                
 
             }
 
             while (!solve_text(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/input[2]"))))
             {
-                if (!first)
-                {
-                    driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[2]/p[3]/i")).Click();
-                    Thread.Sleep(500);
-                }
-
+                driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[2]/p[3]/i")).Click();
+                Thread.Sleep(1000);
+                
                 do
                 {
                     try
@@ -913,8 +926,7 @@ namespace Fuset
                         continue;
                     }
                 } while (true);//ожидание загрузки изображения капчи
-
-                first = false;
+                
 
             }
             
@@ -1566,6 +1578,157 @@ namespace Fuset
                 busy = false;
             });
         }
+
+        public async void Step3(int i)
+        {
+            await Task.Run(() =>
+            {
+                options = new ChromeOptions();
+                Proxy proxy = new Proxy();
+                proxy.Kind = ProxyKind.Manual;
+                proxy.IsAutoDetect = false;
+                proxy.HttpProxy = data_get_proxy(i);
+                proxy.SslProxy = data_get_proxy(i);
+                options.Proxy = proxy;
+                options.AddArgument("ignore-certificate-errors");
+                //options.AddArgument("--headless");
+                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
+                options.AddArguments("--start-maximized");
+                driver = new ChromeDriver(options);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+
+                try
+                {
+                    UpdateLog2("(" + i + ")Загрузка страницы...");
+                    driver.Navigate().GoToUrl("https://freebitco.in/");
+                }
+                catch (Exception)
+                {
+                    UpdateLog2("(" + i + ")Страница не загрузилась.");
+                    driver.Quit();
+                    busy = false;
+                    return;
+                }
+
+                try
+                {
+                    UpdateLog2("(" + i + ")Поиск кулдауна...");
+                    wait.Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
+                    Thread.Sleep(1000);
+                    timing_list[i] = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 10;
+                    UpdateLog2(timing_list[i] + "");
+
+                    if (timing_list[i] > 2000)
+                    {
+                        UpdateLog2("(" + i + ")Кулдаун заменен с " + timing_list[i] + " на 2000.");
+                        timing_list[i] = 2000;
+                    }
+
+                    check_multiply(driver, i);
+                    driver.Quit();
+                    busy = false;
+                    return;
+                }
+                catch (Exception)
+                {
+                    UpdateLog2("(" + i + ")Кулдаун не обнаружен.");
+                }
+
+                try
+                {
+                    if (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))))
+                    {
+                        UpdateLog2("(" + i + ")Кнопка сбора найдена.");
+                    }
+                }
+                catch (Exception)
+                {
+                    UpdateLog2("(" + i + ")Кнопка сбора не найдена.");
+                    driver.Quit();
+                    busy = false;
+                    return;
+                }
+
+                UpdateLog2("(" + i + ")Запись баланса...");
+                write_balance(driver, i);
+                
+
+                try
+                {
+                    driver.FindElement(By.Id("switch_captchas_button"));
+                    UpdateLog2("(" + i + ")Есть текстовая капча.");
+                }
+                catch (Exception)
+                {
+                    multiply_list.Add(i);
+                    UpdateLog2("(" + i + ")Текстовая капча недоступна " + i + " поставлена в очередь мультика.");
+                    
+                    
+                    timing_list[i] = 1000;
+                    driver.Quit();
+                    busy = false;
+                    return;
+                }
+                
+
+                do
+                {
+                    simple_captcha2(driver);
+                    bonus(driver);
+                    Thread.Sleep(1000);
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
+
+                    driver.FindElement(By.Id("free_play_form_button")).Click();
+                    try
+                    {
+                        wait.Until(ExpectedConditions.ElementIsVisible(By.Id("free_play_form_button")));
+                        driver1.Navigate().Refresh();
+                    }
+                    catch (Exception)
+                    {
+                        UpdateLog2("(" + i + ")Собрано.");
+                        try
+                        {
+                            wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".countdown_amount")));
+                            Thread.Sleep(1000);
+                        }
+                        catch (Exception)
+                        {
+                            driver.Quit();
+                            busy = false;
+                            return;
+                        }
+                        
+                        timing_list[i] = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 10;
+
+                        if (timing_list[i] > 2000)
+                        {
+                            UpdateLog2("(" + i + ")Кулдаун заменен с " + timing_list[i] + " на 2000.");
+                            timing_list[i] = 2000;
+                        }
+
+                        check_multiply(driver, i);
+                        driver.Quit();
+                        busy = false;
+                        return;
+                    }
+
+                } while (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))));
+
+
+            });
+
+            UpdateLog2("(" + i + ")Stepped пуст.");
+            stepped = 777;
+            label3.Text = "";
+            foreach (var item in multiply_list)
+            {
+                label3.Text += item + " ";
+            }
+        }
         
         public Form1()
         {
@@ -1626,14 +1789,16 @@ namespace Fuset
         private void timer1_Tick(object sender, EventArgs e)
         {
             richTextBox1.Clear();
-                for (int i = 0; i < timing_list.Count; i++)
+            for (int i = 0; i < timing_list.Count; i++)
                 {
-                    timing_list[i]--;
+                timing_list[i]--;
 
-                    if (timing_list[i] <= 0 && busy == false)
+                    if (timing_list[i] <= 0 && busy == false && multed != i)
                     {
                     busy = true;
-                    Step2(i);
+                    UpdateLog2("(" + i + ")Stepped = " + i);
+                    stepped = i;
+                    Step3(i);
                     }
 
                 if (timing_list[i] <= -1800)
@@ -1641,12 +1806,28 @@ namespace Fuset
                     this.Close();
                 }
             }
+            try
+            {
                 foreach (var item in timing_list)
                 {
-                
                     UpdateLog(Convert.ToString(item) + "\t");
                 }
-                Time -= 1;
+            }
+            catch (Exception)
+            {
+                
+            }
+                
+
+            if (multiply_list.Count != 0 && multiply_busy == false && stepped != multiply_list[0])
+            {
+                UpdateLog2("(" + multiply_list[0] + ")Multed = " + multiply_list[0]);
+                multed = multiply_list[0];
+                multiply_busy = true;
+                multiply2(multiply_list[0]);
+            }
+
+            Time -= 1;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -1756,13 +1937,8 @@ namespace Fuset
 
         public void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            foreach (var item in multiply_list)
-            {
-                UpdateLog2(item + "");
-            }
-
-            UpdateLog2(multiply_list.Count + "");
-
+            Step3(4);
+            multiply2(4);
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
