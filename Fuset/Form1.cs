@@ -220,7 +220,7 @@ namespace Fuset
 
         public void check_multiply(IWebDriver driver, int i)
         {
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
             driver.Navigate().Refresh();
 
             wait.Until(ExpectedConditions.ElementIsVisible(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
@@ -1694,15 +1694,14 @@ namespace Fuset
                         {
                             wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".countdown_amount")));
                             Thread.Sleep(1000);
+                            timing_list[i] = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 10;
                         }
                         catch (Exception)
                         {
-                            driver.Quit();
-                            busy = false;
-                            return;
+                            
                         }
                         
-                        timing_list[i] = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 10;
+                        
 
                         if (timing_list[i] > 2000)
                         {
