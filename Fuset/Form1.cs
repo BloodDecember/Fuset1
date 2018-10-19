@@ -1727,8 +1727,17 @@ namespace Fuset
                     catch (Exception)
                     {
                         driver.Navigate().Refresh();
-                        wait.Until(ExpectedConditions.ElementIsVisible(By.Id("free_play_form_button")));
+
+                        try
+                        {
+                            wait.Until(ExpectedConditions.ElementIsVisible(By.Id("free_play_form_button")));
+                        }
+                        catch (Exception)
+                        {
+                        }
                     }
+                    
+
 
                 } while (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))));
 
