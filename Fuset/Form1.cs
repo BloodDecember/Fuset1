@@ -253,9 +253,9 @@ namespace Fuset
         {
                 await Task.Run(() =>
                 {
-                try
-                {
-                    string[] words;
+                    try
+                    {
+                        string[] words;
                     double result = 0.00000001;
                     int luz_num = 0;
                     double wager;
@@ -299,18 +299,21 @@ namespace Fuset
                         driver1.Quit();
                         multiply_busy = false;
                         multed = 777;
+                        return;
                     }
 
                     ((IJavaScriptExecutor)driver1).ExecuteScript("arguments[0].setAttribute('style','display');", driver1.FindElement(By.CssSelector(".large-12.fixed")));
 
                     int old_btc = Convert.ToInt32(driver1.FindElement(By.Id("balance")).Text.Replace(".", ""));
 
-                    if (old_btc < 30000)
+                    if (old_btc < 20000)
                     {
-                        timing_list[i] = 3600;
-                        driver1.Quit();
-                        multiply_busy = false;
-                        multed = 777;
+                            UpdateLog2("(" + i + ")баланс меньше 20000, отмена мультика.");
+                            timing_list[i] = 3600;
+                            driver1.Quit();
+                            multiply_busy = false;
+                            multed = 777;
+                            return;
                     }
 
 
@@ -340,6 +343,7 @@ namespace Fuset
                     //    old_wager = 2000;
                     //}
 
+                    
                     driver1.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
                     do
                     {
@@ -387,6 +391,7 @@ namespace Fuset
                             driver1.Quit();
                             multiply_busy = false;
                             multed = 777;
+                            return;
                         }
                         roll_wait = 0;
 
@@ -419,7 +424,9 @@ namespace Fuset
                     driver1.Quit();
                     multiply_busy = false;
                     multed = 777;
+                    return;
                     }
+
                     catch (Exception ex)
                     {
                         UpdateLog2("Ошибка мультика" + ex);
@@ -427,8 +434,9 @@ namespace Fuset
                         driver1.Quit();
                         multiply_busy = false;
                         multed = 777;
+                        return;
                     }
-                });
+        });
 
             
 
@@ -1615,6 +1623,22 @@ namespace Fuset
 
                 try
                 {
+                    driver.FindElement(By.CssSelector(".error-code"));
+                    UpdateLog2("(" + i + ")" + driver.FindElement(By.CssSelector(".error-code")).Text);
+                    driver.Quit();
+                    busy = false;
+                    UpdateLog2("(" + i + ")" + "Смена прокси " + data_get_proxy(i));
+                    proxy_change(i);
+                    UpdateLog2("(" + i + ")" + "Новый прокси " + data_get_proxy(i));
+                    return;
+                }
+                catch (Exception)
+                {
+                    
+                }
+
+                try
+                {
                     UpdateLog2("(" + i + ")Поиск кулдауна...");
                     wait.Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
                     Thread.Sleep(1000);
@@ -1682,26 +1706,12 @@ namespace Fuset
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
 
                     driver.FindElement(By.Id("free_play_form_button")).Click();
+
                     try
                     {
-                        wait.Until(ExpectedConditions.ElementIsVisible(By.Id("free_play_form_button")));
-                        driver1.Navigate().Refresh();
-                    }
-                    catch (Exception)
-                    {
-                        UpdateLog2("(" + i + ")Собрано.");
-                        try
-                        {
-                            wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".countdown_amount")));
-                            Thread.Sleep(1000);
-                            timing_list[i] = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 10;
-                        }
-                        catch (Exception)
-                        {
-                            
-                        }
-                        
-                        
+                        wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".countdown_amount")));
+                        Thread.Sleep(1000);
+                        timing_list[i] = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 10;
 
                         if (timing_list[i] > 2000)
                         {
@@ -1713,6 +1723,11 @@ namespace Fuset
                         driver.Quit();
                         busy = false;
                         return;
+                    }
+                    catch (Exception)
+                    {
+                        driver.Navigate().Refresh();
+                        wait.Until(ExpectedConditions.ElementIsVisible(By.Id("free_play_form_button")));
                     }
 
                 } while (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))));
@@ -1934,10 +1949,9 @@ namespace Fuset
             //DataGridUpdate();
         }
 
-        public void button6_Click(object sender, EventArgs e)//тестовая кнопка
+        public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            Step3(4);
-            multiply2(4);
+            multiply2(7);
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
