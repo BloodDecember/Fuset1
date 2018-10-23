@@ -255,7 +255,7 @@ namespace Fuset
                 {
                     try
                     {
-                        string[] words;
+                    string[] words;
                     double result = 0.00000001;
                     int luz_num = 0;
                     double wager;
@@ -309,6 +309,7 @@ namespace Fuset
                     if (old_btc < 20000)
                     {
                             UpdateLog2("(" + i + ")баланс меньше 20000, отмена мультика.");
+                            multiply_list.Remove(i);
                             timing_list[i] = 3600;
                             driver1.Quit();
                             multiply_busy = false;
@@ -417,7 +418,7 @@ namespace Fuset
                     m_sqlCmd.CommandText = "INSERT INTO Multiply_stat ('id_prof', 'result', 'wager', 'date') values ('" + i + "', '" + new_btc + "', '" + old_wager + "', '" + DateTime.Now + "' )";
 
                     m_sqlCmd.ExecuteNonQuery();
-
+                    multiply_list.Distinct();
                     multiply_list.Remove(i);
                     timing_list[i] = 10;
 
@@ -865,16 +866,24 @@ namespace Fuset
         public bool simple_captcha2(IWebDriver driver)
         {
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            
 
-            if (!IsElementVisible(driver.FindElement(By.Id("free_play_double_captchas"))))
+            try
             {
-                driver.FindElement(By.Id("switch_captchas_button")).Click();
+                if (!IsElementVisible(driver.FindElement(By.Id("free_play_double_captchas"))))
+                {
+                    driver.FindElement(By.Id("switch_captchas_button")).Click();
+                }
+
+                wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")));
+
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")));
+
             }
+            catch (Exception)
+            {
 
-            wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")));
-
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")));
+                return false;
+            }
             
             do
             {
@@ -1232,6 +1241,8 @@ namespace Fuset
             catch (Exception)
             {
                 UpdateLog2("сбой активации бонусов");
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+                driver.FindElement(By.PartialLinkText("FREE BTC")).Click();
             }
 
         }
@@ -1824,7 +1835,7 @@ namespace Fuset
                     Step3(i);
                     }
 
-                if (timing_list[i] <= -1800)
+                if (timing_list[i] <= -1000)
                 {
                     this.Close();
                 }
