@@ -1711,7 +1711,16 @@ namespace Fuset
 
                 do
                 {
-                    simple_captcha2(driver);
+                    if (simple_captcha2(driver))
+                    {
+                        
+                    }
+                    else
+                    {
+                        driver.Quit();
+                        busy = false;
+                        break;
+                    }
                     bonus(driver);
                     Thread.Sleep(1000);
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
@@ -1761,6 +1770,15 @@ namespace Fuset
             foreach (var item in multiply_list)
             {
                 label3.Text += item + " ";
+            }
+            try
+            {
+                driver.Quit();
+                busy = false;
+                UpdateLog2("(" + i + ")Дно шага.");
+            }
+            catch (Exception)
+            {
             }
         }
         
@@ -1971,7 +1989,15 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            multiply2(7);
+            try
+            {
+                driver.Quit();
+                busy = false;
+                UpdateLog2(")Дно шага.");
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
