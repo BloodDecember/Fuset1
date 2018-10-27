@@ -238,7 +238,8 @@ namespace Fuset
 
                 UpdateLog2("(" + i + ")Найдено условие разблокировки бонусов, поставлено в очередь мультика.");
                 multiply_list.Add(i);
-                
+                multiply_list.Distinct();
+
                 return;
             }
             catch (Exception)
@@ -335,8 +336,14 @@ namespace Fuset
                     }
                     catch (Exception)
                     {
-                        wager = 0.00000010;
-                    }
+                            timing_list[i] = 10;
+                            
+                            multiply_list.Remove(i);
+                            driver1.Quit();
+                            multiply_busy = false;
+                            multed = 777;
+                            return;
+                        }
 
                     //if (wager >= 0.00002000)
                     //{
@@ -474,6 +481,75 @@ namespace Fuset
             return true;
         }
 
+        public bool solve_text2(IWebDriver driver, IWebElement image, IWebElement field)
+        {
+            Uri imageURL = new Uri(image.GetAttribute("src"));
+
+            String url = imageURL.ToString();
+
+            string localFilename = Application.StartupPath + @"\captcha_images2\12.jpg";
+            using (WebClient client = new WebClient())
+            {
+                client.DownloadFile(url, localFilename);
+            }
+
+            String uriString = "http://rucaptcha.com/in.php?key=9871bfe3a8bc1be57d780c01c499a9f9";
+            WebClient myWebClient = new WebClient();
+
+            
+            byte[] responseArray = myWebClient.UploadFile(uriString, localFilename);
+            string text = Encoding.ASCII.GetString(responseArray).Substring(3);                 //ID капчи
+
+            
+            byte[] postArray = Encoding.ASCII.GetBytes(text);
+            uriString = "http://rucaptcha.com/res.php?key=9871bfe3a8bc1be57d780c01c499a9f9&action=get&id=" + text;
+
+            string solve;
+
+            do
+            {
+                Thread.Sleep(5000);
+                responseArray = myWebClient.UploadData(uriString, postArray);
+                solve = Encoding.ASCII.GetString(responseArray);
+
+            } while (solve == "CAPCHA_NOT_READY");
+
+            solve = solve.Substring(3);
+
+
+            foreach (var item in solve)
+            {
+                Convert.ToInt32(item);
+                if (item >= 48 && item <= 57)
+                {
+                    UpdateLog2("эта капча " + solve + " содержит числа");
+
+
+                    uriString = "http://rucaptcha.com/res.php?key=9871bfe3a8bc1be57d780c01c499a9f9&action=reportbad&id=" + text;
+                    responseArray = myWebClient.UploadData(uriString, postArray);
+                    UpdateLog2(Encoding.ASCII.GetString(responseArray));
+
+                    return false;
+                }
+            }
+
+            if (solve.Length != 6)
+            {
+                UpdateLog2("эта капча " + solve + " не из 6 символов");
+
+                uriString = "http://rucaptcha.com/res.php?key=9871bfe3a8bc1be57d780c01c499a9f9&action=reportbad&id=" + text;
+                responseArray = myWebClient.UploadData(uriString, postArray);
+                UpdateLog2(Encoding.ASCII.GetString(responseArray));
+
+                return false;
+            }
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", field);
+            field.SendKeys(solve);
+
+            return true;
+        }
+        
         public void send_vk(string text, IWebDriver driver)
         {
             ((IJavaScriptExecutor)driver).ExecuteScript("window.open()");
@@ -866,10 +942,10 @@ namespace Fuset
         public bool simple_captcha2(IWebDriver driver)
         {
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
+            
             try
             {
-                if (!IsElementVisible(driver.FindElement(By.Id("free_play_double_captchas"))))
+                if (!IsElementVisible(driver.FindElement(By.Id("free_play_double_captchas"))) && IsElementVisible(driver.FindElement(By.Id("free_play_recaptcha"))))
                 {
                     driver.FindElement(By.Id("switch_captchas_button")).Click();
                 }
@@ -900,7 +976,7 @@ namespace Fuset
                 }
             } while (true);//ожидание загрузки изображения капчи
             
-            while (!solve_text(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]"))))
+            while (!solve_text2(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]"))))
             {
                 
                 driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[2]/p[3]")).Click();
@@ -924,7 +1000,7 @@ namespace Fuset
 
             }
 
-            while (!solve_text(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/input[2]"))))
+            while (!solve_text2(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/input[2]"))))
             {
                 driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[2]/p[3]/i")).Click();
                 Thread.Sleep(1000);
@@ -1672,11 +1748,30 @@ namespace Fuset
                     UpdateLog2("(" + i + ")Кулдаун не обнаружен.");
                 }
 
+
+                
+
                 try
                 {
                     if (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))))
                     {
                         UpdateLog2("(" + i + ")Кнопка сбора найдена.");
+
+                        try
+                        {
+                            if (IsElementVisible(driver.FindElement(By.Id("play_without_captcha_container"))))
+                            {
+                                
+                            }
+
+                        }
+                        catch (Exception)
+                        {
+                            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
+
+                            driver.FindElement(By.Id("free_play_form_button")).Click();
+                            UpdateLog2("(" + i + ")Сбор без капчи.");
+                        }
                     }
                 }
                 catch (Exception)
@@ -1699,14 +1794,14 @@ namespace Fuset
                 catch (Exception)
                 {
                     multiply_list.Add(i);
+                    multiply_list = multiply_list.Distinct().ToList();
                     UpdateLog2("(" + i + ")Текстовая капча недоступна " + i + " поставлена в очередь мультика.");
-                    
-                    
                     timing_list[i] = 1000;
                     driver.Quit();
                     busy = false;
                     return;
                 }
+
                 
 
                 do
@@ -1730,7 +1825,7 @@ namespace Fuset
                     try
                     {
                         wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".countdown_amount")));
-                        Thread.Sleep(1000);
+                        //Thread.Sleep(1000);
                         timing_list[i] = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 10;
 
                         if (timing_list[i] > 2000)
@@ -1989,14 +2084,11 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            try
+            multiply_list = multiply_list.Distinct().ToList();
+            label3.Text = "";
+            foreach (var item in multiply_list)
             {
-                driver.Quit();
-                busy = false;
-                UpdateLog2(")Дно шага.");
-            }
-            catch (Exception)
-            {
+                label3.Text += item + " ";
             }
         }
 
