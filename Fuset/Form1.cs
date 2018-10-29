@@ -1230,7 +1230,7 @@ namespace Fuset
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
                 //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
                 WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
+                bool rush = false;
 
                 try
                 {
@@ -1283,11 +1283,9 @@ namespace Fuset
                 catch (Exception)
                 {
                     UpdateLog2("(" + i + ")Кулдаун не обнаружен.");
+                    rush = true;
                 }
-
-
                 
-
                 try
                 {
                     if (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))))
@@ -1330,7 +1328,14 @@ namespace Fuset
                 }
                 catch (Exception)
                 {
-                    multiply_list.Add(i);
+                    if (rush)
+                    {
+                        multiply_list.Insert(0, i);
+                    }
+                    else
+                    {
+                        multiply_list.Add(i);
+                    }
                     multiply_list = multiply_list.Distinct().ToList();
                     UpdateLog2("(" + i + ")Текстовая капча недоступна " + i + " поставлена в очередь мультика.");
                     timing_list[i] = 1000;
