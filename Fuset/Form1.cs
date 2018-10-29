@@ -113,6 +113,36 @@ namespace Fuset
             }
         }
 
+        public void write_faucet(IWebDriver driver, int i)
+        {
+            UpdateLog("(" + i + ")Запись выплаты...");
+            string date = Convert.ToString(DateTime.Now).Substring(0, 5);
+            int RP = Convert.ToInt32(driver.FindElement(By.Id("fp_reward_points_won")).Text.Replace(".", ""));
+            int BTC = Convert.ToInt32(driver.FindElement(By.Id("winnings")).Text.Replace(".", ""));
+
+            
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT id FROM Log WHERE (Date, Akk) = (" + date + ", " + i + ")";
+            try
+            {
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read(); //sqlite_datareader.GetInt32(0)
+                sqlite_datareader.GetInt32(0);
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "update Log set (Faucet, RP, BTC) = (Faucet+1, RP+" + RP + ", BTC+" + BTC + ") where (Date, Akk) = (" + date + ", " + i +")";
+                m_sqlCmd.ExecuteNonQuery();
+            }
+            catch (InvalidOperationException)
+            {
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "INSERT INTO Log (Date, Akk, Faucet, RP, BTC) values (" + date + ", " + i + ", 1, " + RP + ", " + BTC + ")";
+
+                m_sqlCmd.ExecuteNonQuery();
+            }
+            UpdateLog("(" + i + ")Выплата записана");
+        }
+
         public int multiply(IWebDriver driver)
         {
             string[] words;
@@ -449,36 +479,6 @@ namespace Fuset
             
 
 
-        }
-
-        public bool solve_text(IWebDriver driver, IWebElement image, IWebElement field)
-        {
-            Uri imageURL = new Uri(image.GetAttribute("src"));
-
-            PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-
-            string solve = Rucaptcha.Recognize(PuthToPicture);
-
-            foreach (var item in solve)
-            {
-                Convert.ToInt32(item);
-                if (item >= 48 && item <= 57)
-                {
-                    UpdateLog2("эта капча " + solve + " содержит числа");
-                    return false;
-                }
-            }
-
-            if (solve.Length != 6)
-            {
-                UpdateLog2("эта капча " + solve + " не из 6 символов");
-                return false;
-            }
-
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", field);
-            field.SendKeys(solve);
-
-            return true;
         }
 
         public bool solve_text2(IWebDriver driver, IWebElement image, IWebElement field)
@@ -825,118 +825,6 @@ namespace Fuset
             sqlite_datareader.Close();
 
             return prof;
-        }
-
-        public bool simple_captcha(IWebDriver driver)
-        {
-            if (IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
-            {
-                do
-                {   
-                    try
-                    {
-                        logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
-                        logoSRC = logo.GetAttribute("src");
-                        break;
-                    }
-                    catch (System.NullReferenceException)
-                    {
-                        Thread.Sleep(500);
-                        continue;
-                    }
-                } while (true) ;
-
-
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                logoSRC = Rucaptcha.Recognize(PuthToPicture);
-
-                foreach (var item in logoSRC)
-                {
-                    Convert.ToInt32(item);
-                    if (item >= 48 && item <= 57)
-                    {
-                        UpdateLog2("эта капча " + logoSRC + " содержит числа");
-                        return false;
-                    }
-                }
-
-
-                if (logoSRC.Length != 6)
-                {
-                    UpdateLog2("эта капча " + logoSRC + " длиннее 6 символов");
-                    return false;
-                }
-                else
-                {
-                    FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(logoSRC);
-
-                    logo = FandS(driver, "//*[@id='botdetect_free_play_captcha2']/div[1]/img");
-                    logoSRC = logo.GetAttribute("src");
-                    imageURL = new Uri(logoSRC);
-                    PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                    logoSRC = Rucaptcha.Recognize(PuthToPicture);
-                    FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
-                    
-                    miss += 4;
-                    return true;
-                }
-                
-
-
-            }
-            if (!IsElementVisible(FandS(driver, "botdetect_free_play_captcha")) && IsElementVisible(FandS(driver, "switch_captchas_button")))
-            {
-                FandS(driver, "switch_captchas_button").Click();
-
-                logo = FandS(driver, "//*[@id='botdetect_free_play_captcha']/div[1]/img");
-                try
-                {
-                    logoSRC = logo.GetAttribute("src");
-                }
-                catch (NullReferenceException)
-                {
-
-                    return false;
-                }
-                
-                imageURL = new Uri(logoSRC);
-                PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                logoSRC = Rucaptcha.Recognize(PuthToPicture);
-
-                foreach (var item in logoSRC)
-                {
-                    Convert.ToInt32(item);
-                    if (item > 48 && item < 57)
-                    {
-                        UpdateLog2("эта капча " + logoSRC + " содержит числа");
-                        return false;
-                    }
-                }
-
-
-                if (logoSRC.Length != 6)
-                {
-                    UpdateLog2("эта капча " + logoSRC + " длиннее 6 символов");
-                    return false;
-                }
-                else
-                {
-                    FandS(driver, "//*[@id='botdetect_free_play_captcha']/input[2]").SendKeys(logoSRC);
-
-                    logo = FandS(driver, "//*[@id='botdetect_free_play_captcha2']/div[1]/img");
-                    logoSRC = logo.GetAttribute("src");
-                    imageURL = new Uri(logoSRC);
-                    PuthToPicture = Rucaptcha.Download_Captcha(imageURL.ToString());
-                    logoSRC = Rucaptcha.Recognize(PuthToPicture);
-                    FandS(driver, "//*[@id='botdetect_free_play_captcha2']/input[2]").SendKeys(logoSRC);
-                    
-                    miss += 3;
-                    return true;
-                }
-            }
-            
-            return false;
         }
 
         public bool simple_captcha2(IWebDriver driver)
@@ -1323,357 +1211,6 @@ namespace Fuset
 
         }
 
-        public async void Step(int i)
-        {
-            miss = 0;
-            
-            //DataGridUpdate();
-            await Task.Run(() =>
-            {
-                //options.AddArgument("--headless");
-                options = new ChromeOptions();
-                Proxy proxy = new Proxy();
-                proxy.Kind = ProxyKind.Manual;
-                proxy.IsAutoDetect = false;
-                proxy.HttpProxy = data_get_proxy(i);
-                proxy.SslProxy = data_get_proxy(i);
-                options.Proxy = proxy;
-                options.AddArgument("ignore-certificate-errors");
-
-                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
-                options.AddArguments("--start-maximized");
-                IWebDriver driver = new ChromeDriver(options);
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-
-                UpdateLog2(data_get_prof(i) + " - " + data_get_proxy(i));
-                
-                driver.Navigate().GoToUrl("https://freebitco.in/");
-                
-                if (!IsElementVisible(FandS(driver, "deposit_withdraw_container")))
-                {
-                    if (IsElementVisible(FandS(driver, ".error-code")).ToString() == "ERR_PROXY_CONNECTION_FAILED")//error-code
-                    {
-                        do
-                        {
-                            driver.Navigate().GoToUrl("https://freebitco.in/");
-                        } while (IsElementVisible(FandS(driver, ".error-code")).ToString() == "ERR_PROXY_CONNECTION_FAILED");
-                    }
-
-
-                    proxy_change(i);
-
-
-                    timing_list[i] = 10;
-                    driver.Quit();
-                    busy = false;
-                    return;
-                }
-
-
-
-                //Определение кулдауна сбора
-
-                if (IsElementVisible(FandS(driver, "multi_acct_same_ip")))
-                {
-                    proxy_change(i);
-
-
-                    timing_list[i] = 10;
-                    driver.Quit();
-                    busy = false;
-                    return;
-                }
-
-                //Thread.Sleep(5000);
-                    if (IsElementVisible(FandS(driver, ".countdown_amount")))
-                    {
-                        try
-                        {
-                            Thread.Sleep(500);
-                            timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
-
-                            UpdateLog("Кулдаун сбора " + timing_list[i] + " секунд");
-
-                            add_good_proxy(data_get_proxy(i));
-                            driver.Quit();
-                            busy = false;
-                            return;
-                        }
-                        catch (System.NullReferenceException)
-                        {
-
-                            
-                        }
-                    }
-
-//Активация бонусов
-                bonus(driver);
-
-
-
-
-
-                do
-                {
-                    if (IsElementVisible(FandS(driver, "switch_captchas_button")))
-                        if(!simple_captcha(driver))
-                        {
-                            proxy_change(i);
-
-
-                            timing_list[i] = 10;
-                            driver.Quit();
-                            busy = false;
-                            return;
-                        }
-                            
-                    
-                    if (IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
-                        Rucaptchav2(driver);
-
-                    FandS(driver, "free_play_form_button").Click();
-
-                    Thread.Sleep(10000);
-                    //free_play_error
-                    if (IsElementVisible(FandS(driver, "same_ip_error")) || IsElementVisible(FandS(driver, "free_play_error")))
-                    {
-                        proxy_change(i);
-                        timing_list[i] = 10;
-                        driver.Quit();
-                        busy = false;
-                        return;
-                    }
-
-
-                    driver.Navigate().Refresh();
-                    
-                    
-                    
-
-                }
-                while (IsElementVisible(FandS(driver, "free_play_form_button")));
-
-
-                try
-                {
-                    //((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("winnings")));
-
-                    //calculete(driver.FindElement(By.Id("winnings")).Text, driver.FindElement(By.Id("fp_reward_points_won")).Text, miss);
-                    timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
-                }
-
-                catch (Exception)
-                {
-
-                }
-
-                add_good_proxy(data_get_proxy(i));
-                driver.Quit();
-                busy = false;
-
-            });
-        }
-
-        public async void Step2(int i)
-        {
-            await Task.Run(() =>
-            {
-                options = new ChromeOptions();
-                Proxy proxy = new Proxy();
-                proxy.Kind = ProxyKind.Manual;
-                proxy.IsAutoDetect = false;
-                proxy.HttpProxy = data_get_proxy(i);
-                proxy.SslProxy = data_get_proxy(i);
-                options.Proxy = proxy;
-                options.AddArgument("ignore-certificate-errors");
-                //options.AddArgument("--headless");
-
-                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
-                options.AddArguments("--start-maximized");
-                driver = new ChromeDriver(options);
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                //driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-
-
-
-                int load_falls = 0;
-                miss = 0;
-                do
-                {
-                    try
-                    {
-                        driver.Navigate().GoToUrl("https://freebitco.in/");
-
-                        
-
-                        if (!IsElementVisible(FandS(driver, "deposit_withdraw_container")))                                                 //Загрузилось страница ошибки
-                        {
-                            load_falls++;
-                            //UpdateLog2("freebitco.in не загружена(" + load_falls + ")" + driver.FindElement(By.CssSelector(".error-code")).Text);
-                        }
-                        else                                                                                                                //Загрузилось freebitco.in
-                        {
-                            try
-                            {
-                                IWebElement dynamicElement = (new WebDriverWait(driver, TimeSpan.FromSeconds(10))).Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
-                                //UpdateLog2("Кулдаун загрузился " + Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 61);
-                                timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
-                                
-
-                                driver.Quit();
-                                busy = false;
-                                return;
-                            }
-                            catch (Exception)
-                            {
-                                if (IsElementVisible(FandS(driver, "free_play_form_button")))
-                                {
-                                    //UpdateLog2("кнопка сбора найдена");
-                                    break;
-                                }
-                                else
-                                {
-                                    //UpdateLog2("кнопка сбора не найдена");
-                                }
-                            }
-                        }
-
-                        continue;
-                    }
-                    catch (WebDriverException)
-                    {
-                        load_falls++;
-                        //UpdateLog2("страница не загружена - " + load_falls + " раз.");
-                        continue;
-                    }
-                } while (load_falls < 10);                      //Модуль загрузки страницы
-
-                if (load_falls >= 10 || IsElementVisible(FandS(driver, "multi_acct_same_ip")))
-                {
-                    if (load_falls >= 10)
-                    {
-                        //UpdateLog2("Количество попыток загрузки 10, меняем прокси (" + data_get_proxy(i) + ")");
-                        m_sqlCmd.CommandText = "update Proxy_list set usage = 2 where proxy = '" + data_get_proxy(i) + "'";
-                        m_sqlCmd.ExecuteNonQuery();
-                    }
-                    if (IsElementVisible(FandS(driver, "multi_acct_same_ip")))
-                        //UpdateLog2("Ошибка сбора (" + FandS(driver, "multi_acct_same_ip").Text + ")");
-                    proxy_change(i);
-                    timing_list[i] = 10;
-                    driver.Quit();
-                    busy = false;
-                    return;
-                }
-
-                write_balance(driver, i);
-
-                do
-                {
-                    if (IsElementVisible(FandS(driver, "play_without_captchas_button")))
-                    {
-                        FandS(driver, "play_without_captchas_button").Click();
-                        RP_cost = Convert.ToInt32(FandS(driver, "//*[@id='play_without_captcha_desc']/div/p[2]/span").Text);
-
-                        if (RP_cost <= 5 && checkBox3.Checked)
-                        {
-                            //((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
-                            //driver.FindElement(By.Id("free_play_form_button")).Click();
-                            RP_cost = 0;
-                        }
-                        else
-                        {
-                            FandS(driver, "play_with_captcha_button").Click();
-                            RP_cost = 0;
-                        }
-                    }
-                    try
-                    {
-                        if (IsElementVisible(driver.FindElement(By.Id("switch_captchas_button"))))
-                        {
-                            simple_captcha2(driver);
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        
-                    }
-
-                    if (IsElementVisible(FandS(driver, ".g-recaptcha")) && !IsElementVisible(FandS(driver, "switch_captchas_button")))
-                    {
-                        timing_list[i] = 10000;
-                        multiply2(i);
-                        multiply_list.Add(i);
-                        multiply_busy = true;
-                        driver.Quit(); 
-                        busy = false;
-                        return;
-                    }
-
-                    bonus(driver);
-                    try
-                    {
-                        FandS(driver, "/html/body/div[1]/div/a[1]").Click();
-                    }
-                    catch (Exception)
-                    {
-
-                    }
-
-                    try
-                    {
-                        FandS(driver, "free_play_form_button").Click();
-
-                        IWebElement btcElement = (new WebDriverWait(driver, TimeSpan.FromSeconds(10))).Until(ExpectedConditions.ElementIsVisible(By.Id("winnings")));
-
-                        IWebElement rpElement = (new WebDriverWait(driver, TimeSpan.FromSeconds(10))).Until(ExpectedConditions.ElementIsVisible(By.Id("fp_reward_points_won")));
-                        calculete(btcElement.Text, rpElement.Text, miss);
-                        //UpdateLog2(btcElement.Text);
-
-                        
-
-                        timing_list[i] = Convert.ToInt32(FandS(driver, ".countdown_amount").Text) * 60 + 10;
-
-                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.CssSelector(".large-12.fixed")));
-                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
-                        driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
-                        Thread.Sleep(1000);
-
-                        driver.FindElement(By.PartialLinkText("REDEEM ALL RP BONUSES")).Click();
-
-                        multiply2(i);
-                        multiply_list.Add(i);
-                        multiply_busy = true;
-
-
-                        driver.Quit();
-                        busy = false;
-                        return;
-                    }
-                    catch (Exception)
-                    {
-
-                    }
-
-                    //Thread.Sleep(10000);
-                    if (IsElementVisible(FandS(driver, "same_ip_error")))          // || IsElementVisible(FandS(driver, "free_play_error"))
-                    {
-                        proxy_change(i);
-                        timing_list[i] = 10;
-                        driver.Quit();
-                        busy = false;
-                        return;
-                    }
-                    
-                    driver.Navigate().Refresh();
-                }
-                while (IsElementVisible(FandS(driver, "free_play_form_button")));
-
-                driver.Quit();
-                busy = false;
-            });
-        }
-
         public async void Step3(int i)
         {
             await Task.Run(() =>
@@ -1834,6 +1371,8 @@ namespace Fuset
                             timing_list[i] = 2000;
                         }
 
+                        write_faucet(driver, i);
+
                         check_multiply(driver, i);
                         driver.Quit();
                         busy = false;
@@ -1991,7 +1530,7 @@ namespace Fuset
                 m_dbConn.Open();
                 m_sqlCmd.Connection = m_dbConn;
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Log (id INTEGER PRIMARY KEY , Время TEXT, RP INTEGER, BTC INTEGER, miss INTEGER)"; //AUTOINCREMENT
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Log (id INTEGER PRIMARY KEY , Date TEXT, Akk INTEGER, faucet INTEGER, RP INTEGER, BTC INTEGER)"; //AUTOINCREMENT
                 m_sqlCmd.ExecuteNonQuery();
 
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Setting (id INTEGER PRIMARY KEY , akk TEXT, prof TEXT, pass TEXT, proxy TEXT)";
@@ -2022,7 +1561,7 @@ namespace Fuset
                 sr.Close();
             }
 
-            Rucaptcha.Key = textBox1.Text;
+            
             get_timing_list();
 
             if (Properties.Settings.Default.autostart)
@@ -2084,12 +1623,60 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            multiply_list = multiply_list.Distinct().ToList();
-            label3.Text = "";
-            foreach (var item in multiply_list)
+            int i = 1;
+            if (textBox5.Text.Length == 0)
             {
-                label3.Text += item + " ";
+                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
+                return;
             }
+
+
+            options = new ChromeOptions();
+            Proxy proxy = new Proxy();
+            proxy.Kind = ProxyKind.Manual;
+            proxy.IsAutoDetect = false;
+            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+            options.Proxy = proxy;
+            options.AddArgument("ignore-certificate-errors");
+
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
+            options.AddArguments("--start-maximized");
+            driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+            driver.Navigate().GoToUrl("https://freebitco.in/");
+
+
+
+
+
+
+            UpdateLog("(" + i + ")Запись выплаты...");
+            string date = Convert.ToString(DateTime.Now).Substring(0, 5);
+            int RP = Convert.ToInt32(driver.FindElement(By.Id("fp_reward_points_won")).Text.Replace(".", ""));
+            int BTC = Convert.ToInt32(driver.FindElement(By.Id("winnings")).Text.Replace(".", ""));
+            
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT id FROM Log WHERE (Date, Akk) = (" + date + ", " + i + ")";
+            try
+            {
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read(); //sqlite_datareader.GetInt32(0)
+                sqlite_datareader.GetInt32(0);
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "update Log set (Faucet, RP, BTC) = (Faucet+1, RP+" + RP + ", BTC+" + BTC + ") where (Date, Akk) = (" + date + ", " + i + ")";
+                m_sqlCmd.ExecuteNonQuery();
+            }
+            catch (InvalidOperationException)
+            {
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "INSERT INTO Log (Date, Akk, Faucet, RP, BTC) values (" + date + ", " + i + ", 1, " + RP + ", " + BTC + ")";
+
+                m_sqlCmd.ExecuteNonQuery();
+            }
+            UpdateLog("(" + i + ")Выплата записана");
+
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
