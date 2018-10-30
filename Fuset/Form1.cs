@@ -1633,7 +1633,7 @@ namespace Fuset
                 driver.Navigate().GoToUrl("https://freebitco.in/");
 
                 write_faucet_num(driver, i);
-                write_faucet(driver, i);
+                write_balance(driver, i);
                 i++;
                 driver.Quit();
             }
