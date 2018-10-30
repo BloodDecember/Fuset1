@@ -493,7 +493,7 @@ namespace Fuset
                 client.DownloadFile(url, localFilename);
             }
 
-            String uriString = "http://rucaptcha.com/in.php?key=9871bfe3a8bc1be57d780c01c499a9f9";
+            String uriString = "http://rucaptcha.com/in.php?key=" + textBox1.Text;
             WebClient myWebClient = new WebClient();
 
             
@@ -502,7 +502,7 @@ namespace Fuset
 
             
             byte[] postArray = Encoding.ASCII.GetBytes(text);
-            uriString = "http://rucaptcha.com/res.php?key=9871bfe3a8bc1be57d780c01c499a9f9&action=get&id=" + text;
+            uriString = "http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=get&id=" + text;
 
             string solve;
 
@@ -525,7 +525,7 @@ namespace Fuset
                     UpdateLog2("эта капча " + solve + " содержит числа");
 
 
-                    uriString = "http://rucaptcha.com/res.php?key=9871bfe3a8bc1be57d780c01c499a9f9&action=reportbad&id=" + text;
+                    uriString = "http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=reportbad&id=" + text;
                     responseArray = myWebClient.UploadData(uriString, postArray);
                     UpdateLog2(Encoding.ASCII.GetString(responseArray));
 
@@ -537,7 +537,7 @@ namespace Fuset
             {
                 UpdateLog2("эта капча " + solve + " не из 6 символов");
 
-                uriString = "http://rucaptcha.com/res.php?key=9871bfe3a8bc1be57d780c01c499a9f9&action=reportbad&id=" + text;
+                uriString = "http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=reportbad&id=" + text;
                 responseArray = myWebClient.UploadData(uriString, postArray);
                 UpdateLog2(Encoding.ASCII.GetString(responseArray));
 
@@ -1628,60 +1628,11 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            int i = 1;
-            if (textBox5.Text.Length == 0)
+            label3.Text = "";
+            foreach (var item in multiply_list)
             {
-                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
-                return;
+                label3.Text += item + " ";
             }
-
-
-            options = new ChromeOptions();
-            Proxy proxy = new Proxy();
-            proxy.Kind = ProxyKind.Manual;
-            proxy.IsAutoDetect = false;
-            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-            options.Proxy = proxy;
-            options.AddArgument("ignore-certificate-errors");
-
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
-            options.AddArguments("--start-maximized");
-            driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-            driver.Navigate().GoToUrl("https://freebitco.in/");
-
-
-
-
-
-
-            UpdateLog("(" + i + ")Запись выплаты...");
-            string date = Convert.ToString(DateTime.Now).Substring(0, 5);
-            int RP = Convert.ToInt32(driver.FindElement(By.Id("fp_reward_points_won")).Text.Replace(".", ""));
-            int BTC = Convert.ToInt32(driver.FindElement(By.Id("winnings")).Text.Replace(".", ""));
-            
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT id FROM Log WHERE (Date, Akk) = (" + date + ", " + i + ")";
-            try
-            {
-                sqlite_datareader = m_sqlCmd.ExecuteReader();
-                sqlite_datareader.Read(); //sqlite_datareader.GetInt32(0)
-                sqlite_datareader.GetInt32(0);
-                sqlite_datareader.Close();
-                m_sqlCmd.CommandText = "update Log set (Faucet, RP, BTC) = (Faucet+1, RP+" + RP + ", BTC+" + BTC + ") where (Date, Akk) = (" + date + ", " + i + ")";
-                m_sqlCmd.ExecuteNonQuery();
-            }
-            catch (InvalidOperationException)
-            {
-                sqlite_datareader.Close();
-                m_sqlCmd.CommandText = "INSERT INTO Log (Date, Akk, Faucet, RP, BTC) values (" + date + ", " + i + ", 1, " + RP + ", " + BTC + ")";
-
-                m_sqlCmd.ExecuteNonQuery();
-            }
-            UpdateLog("(" + i + ")Выплата записана");
-
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
