@@ -115,7 +115,7 @@ namespace Fuset
 
         public void write_faucet(IWebDriver driver, int i)
         {
-            UpdateLog("(" + i + ")Запись выплаты...");
+            UpdateLog2("(" + i + ")Запись выплаты...");
             string date = Convert.ToString(DateTime.Now).Substring(0, 5);
             int RP = Convert.ToInt32(driver.FindElement(By.Id("fp_reward_points_won")).Text.Replace(".", ""));
             int BTC = Convert.ToInt32(driver.FindElement(By.Id("winnings")).Text.Replace(".", ""));
@@ -140,7 +140,40 @@ namespace Fuset
 
                 m_sqlCmd.ExecuteNonQuery();
             }
-            UpdateLog("(" + i + ")Выплата записана");
+            UpdateLog2("(" + i + ")Выплата записана");
+        }
+
+        public void write_faucet_num(IWebDriver driver, int i)
+        {
+            UpdateLog2("(" + i + ")Запись выплат...");
+            string date = Convert.ToString(DateTime.Now).Substring(0, 5);//.Substring(0, 7)
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+            driver.FindElement(By.PartialLinkText("STATS")).Click();
+            driver.FindElement(By.Id("personal_stats_button")).Click();
+            new WebDriverWait(driver, TimeSpan.FromSeconds(10)).Until(ExpectedConditions.ElementIsVisible(By.Id("user_free_spins_played")));
+
+            int faucet = Convert.ToInt32(driver.FindElement(By.Id("user_free_spins_played")).Text.Replace(",", ""));
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT id FROM Faucet_num WHERE (Date, Akk) = (" + date + ", " + i + ")";
+            try
+            {
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read(); //sqlite_datareader.GetInt32(0)
+                sqlite_datareader.GetInt32(0);
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "update Faucet_num set (Faucet) = (" + faucet + ") where (Date, Akk) = (" + date + ", " + i + ")";
+                m_sqlCmd.ExecuteNonQuery();
+            }
+            catch (InvalidOperationException)
+            {
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "INSERT INTO Faucet_num (Date, Akk, Faucet) values (" + date + ", " + i + ", " + faucet + ")";
+
+                m_sqlCmd.ExecuteNonQuery();
+            }
+            UpdateLog2("(" + i + ")Выплаты записана");
         }
 
         public int multiply(IWebDriver driver)
@@ -1547,7 +1580,7 @@ namespace Fuset
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Balance (id INTEGER PRIMARY KEY, satoshi INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Multiply_stat (id INTEGER PRIMARY KEY, id_prof INTEGER, result INTEGER, wager INTEGER, date TEXT)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Faucet_num (id INTEGER PRIMARY KEY, Date TEXT, Akk INTEGER, faucet INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
             }
@@ -1580,44 +1613,30 @@ namespace Fuset
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (textBox5.Text.Length == 0)
+            int i = 0;
+            foreach (var item in timing_list)
             {
-                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
-                return;
-            }
-            int i = Convert.ToInt32(textBox5.Text);
+                options = new ChromeOptions();
+                Proxy proxy = new Proxy();
+                proxy.Kind = ProxyKind.Manual;
+                proxy.IsAutoDetect = false;
+                proxy.HttpProxy = data_get_proxy(i);
+                proxy.SslProxy = data_get_proxy(i);
+                options.Proxy = proxy;
+                options.AddArgument("ignore-certificate-errors");
 
-            options = new ChromeOptions();
-            Proxy proxy = new Proxy();
-            proxy.Kind = ProxyKind.Manual;
-            proxy.IsAutoDetect = false;
-            proxy.HttpProxy = " ";
-            proxy.SslProxy = " ";
-            options.Proxy = proxy;
-            options.AddArgument("ignore-certificate-errors");
+                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
+                options.AddArguments("--start-maximized");
+                driver = new ChromeDriver(options);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+                driver.Navigate().GoToUrl("https://freebitco.in/");
 
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
-            options.AddArguments("--start-maximized");
-            IWebDriver driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-
-            driver.Navigate().GoToUrl("https://freebitco.in/");
-
-            try
-            {
-                driver.FindElement(By.PartialLinkText("LOGIN")).Click();
-                driver.FindElement(By.Id("login_form_btc_address")).SendKeys(data_get_akk(i) + "@mail.ru");
-                driver.FindElement(By.Id("login_form_password")).SendKeys(data_get_pass(i));
-                driver.FindElement(By.Id("login_button")).Click();
-            }
-            catch (OpenQA.Selenium.NoSuchElementException)
-            {
-
+                write_faucet_num(driver, i);
+                write_faucet(driver, i);
+                i++;
                 driver.Quit();
             }
-
-
-            //login_button
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -1628,11 +1647,30 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            label3.Text = "";
-            foreach (var item in multiply_list)
+            if (textBox5.Text.Length == 0)
             {
-                label3.Text += item + " ";
+                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
+                return;
             }
+
+
+            options = new ChromeOptions();
+            Proxy proxy = new Proxy();
+            proxy.Kind = ProxyKind.Manual;
+            proxy.IsAutoDetect = false;
+            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+            options.Proxy = proxy;
+            options.AddArgument("ignore-certificate-errors");
+
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
+            options.AddArguments("--start-maximized");
+            driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+            driver.Navigate().GoToUrl("https://freebitco.in/");
+
+            write_faucet_num(driver, Convert.ToInt32(textBox5.Text));
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
