@@ -518,7 +518,7 @@ namespace Fuset
         static string bet(string Cookie, string csrf_token, string bet)
         {
             Random random = new Random();
-            string result;
+            string[] result;
             string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxz";
             string rand = "0123456789";
             chars = new string(Enumerable.Repeat(chars, 16).Select(s => s[random.Next(s.Length)]).ToArray());
@@ -541,17 +541,15 @@ namespace Fuset
                 httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
 
 
-                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result;
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { ':' });
 
-                Thread.Sleep(100);
-
-                if (result[3] == 'l')
+                if (result[1] == "l")
                 {
-                    return "-" + result.Substring(21, 10);
+                    return "-" + result[4];
                 }
                 else
                 {
-                    return result.Substring(21, 10);
+                    return result[4];
                 }
                 
             }
@@ -562,6 +560,7 @@ namespace Fuset
             await Task.Run(() =>
             {
                 int luz_num = 0;
+                
 
                 m_sqlCmd = m_dbConn.CreateCommand();
                 m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
@@ -597,14 +596,13 @@ namespace Fuset
                         wager -= result;
                     }
 
-                    result = Convert.ToDouble(bet(Cookie, csrf_token, "0.00000001").Replace(".", ","));
-                    UpdateLog2(Convert.ToString(result) + "___" + luz_num);
+                    result = Convert.ToDouble(bet(Cookie, csrf_token, result.ToString("F8").Replace(",", ".")).Replace(".", ","));
+                    UpdateLog3(result.ToString("F8") + "_" + luz_num + "_" + wager.ToString("F8"));
 
                 } while (wager > 0 || luz_num != 0);
-                
 
 
-                
+
             });
         }
 
@@ -1125,11 +1123,10 @@ namespace Fuset
         
         public void UpdateLog(string s)
         {
-            
-
             Action action = () =>
             {
                 richTextBox1.AppendText(s + "\n");
+                
             };
 
             Invoke(action);
@@ -1147,7 +1144,18 @@ namespace Fuset
 
             Invoke(action);
         }
-        
+
+        public void UpdateLog3(string s)
+        {
+            Action action = () =>
+            {
+                richTextBox3.AppendText(s + "\n");
+                richTextBox3.ScrollToCaret();
+            };
+
+            Invoke(action);
+        }
+
         public IWebElement FandS(IWebDriver driver, string selector)
         {
             IWebElement element = null;
@@ -1741,7 +1749,7 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            multiply3(9, 0.00000010);
+            multiply3(9, 0.00000200);
             //UpdateLog2(Convert.ToString(Convert.ToInt32("l")));
         }
 
