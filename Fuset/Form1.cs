@@ -8,6 +8,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Security.Principal;
 using System.Text;
@@ -514,6 +515,99 @@ namespace Fuset
 
         }
 
+        static string bet(string Cookie, string csrf_token, string bet)
+        {
+            Random random = new Random();
+            string result;
+            string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxz";
+            string rand = "0123456789";
+            chars = new string(Enumerable.Repeat(chars, 16).Select(s => s[random.Next(s.Length)]).ToArray());
+            rand = new string(Enumerable.Repeat(rand, 17).Select(s => s[random.Next(s.Length)]).ToArray());
+
+            var baseAddress = new Uri("https://freebitco.in/cgi-bin/bet.pl?m=hi&client_seed=" + chars + "&jackpot=0&stake=" + bet + "&multiplier=2.00&rand=0." + rand + "&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                httpRequestMessage.Headers.Add("Accept", "*/*");
+                httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
+                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result;
+
+                Thread.Sleep(100);
+
+                if (result[3] == 'l')
+                {
+                    return "-" + result.Substring(21, 10);
+                }
+                else
+                {
+                    return result.Substring(21, 10);
+                }
+                
+            }
+        }
+
+        public async void multiply3(int i, double wager)
+        {
+            await Task.Run(() =>
+            {
+                int luz_num = 0;
+
+                m_sqlCmd = m_dbConn.CreateCommand();
+                m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read();
+                string Cookie = sqlite_datareader.GetString(0);
+                sqlite_datareader.Close();
+
+                m_sqlCmd = m_dbConn.CreateCommand();
+                m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read();
+                string csrf_token = sqlite_datareader.GetString(0);
+                sqlite_datareader.Close();
+
+                double result = Convert.ToDouble(bet(Cookie, csrf_token, "0.00000001").Replace(".", ","));
+
+                do
+                {
+                    if (result < 0)
+                    {
+                        if (luz_num >= 6)
+                        {
+                            result = result * 2;
+                        }
+
+                        luz_num++;
+                        wager += result;
+                    }
+                    else
+                    {
+                        luz_num = 0;
+                        wager -= result;
+                    }
+
+                    result = Convert.ToDouble(bet(Cookie, csrf_token, "0.00000001").Replace(".", ","));
+                    UpdateLog2(Convert.ToString(result) + "___" + luz_num);
+
+                } while (wager > 0 || luz_num != 0);
+                
+
+
+                
+            });
+        }
+
         public bool solve_text2(IWebDriver driver, IWebElement image, IWebElement field)
         {
             Uri imageURL = new Uri(image.GetAttribute("src"));
@@ -1018,10 +1112,7 @@ namespace Fuset
 
                 if (dTable.Rows.Count > 0)
                 {
-                    dataGridView2.Rows.Clear();
-
-                    for (int i = 0; i < dTable.Rows.Count; i++)
-                        dataGridView2.Rows.Add(dTable.Rows[i].ItemArray);
+                    
                 }
                 else
                     UpdateLog("Database is empty");
@@ -1583,6 +1674,9 @@ namespace Fuset
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Faucet_num (id INTEGER PRIMARY KEY, Date TEXT, Akk INTEGER, faucet INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Cookie_setting (id INTEGER PRIMARY KEY, Cookie TEXT, csrf_token TEXT)";
+                m_sqlCmd.ExecuteNonQuery();
+
             }
             catch (SQLiteException ex)
             {
@@ -1647,30 +1741,8 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            if (textBox5.Text.Length == 0)
-            {
-                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
-                return;
-            }
-
-
-            options = new ChromeOptions();
-            Proxy proxy = new Proxy();
-            proxy.Kind = ProxyKind.Manual;
-            proxy.IsAutoDetect = false;
-            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-            options.Proxy = proxy;
-            options.AddArgument("ignore-certificate-errors");
-
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
-            options.AddArguments("--start-maximized");
-            driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-            driver.Navigate().GoToUrl("https://freebitco.in/");
-
-            write_faucet_num(driver, Convert.ToInt32(textBox5.Text));
+            multiply3(9, 0.00000010);
+            //UpdateLog2(Convert.ToString(Convert.ToInt32("l")));
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
