@@ -515,7 +515,7 @@ namespace Fuset
 
         }
 
-        static string bet(string Cookie, string csrf_token, string bet)
+        static string Bet(string Cookie, string csrf_token, string bet)
         {
             Random random = new Random();
             string[] result;
@@ -524,7 +524,7 @@ namespace Fuset
             chars = new string(Enumerable.Repeat(chars, 16).Select(s => s[random.Next(s.Length)]).ToArray());
             rand = new string(Enumerable.Repeat(rand, 17).Select(s => s[random.Next(s.Length)]).ToArray());
 
-            var baseAddress = new Uri("https://freebitco.in/cgi-bin/bet.pl?m=hi&client_seed=" + chars + "&jackpot=0&stake=" + bet + "&multiplier=2.00&rand=0." + rand + "&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            var baseAddress = new Uri("https://freebitco.in/cgi-bin/bet.pl?m=hi&client_seed=" + chars + "&jackpot=0&stake=" + bet.Replace(",", ".") + "&multiplier=2.00&rand=0." + rand + "&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
             using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
             using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
             {
@@ -542,16 +542,10 @@ namespace Fuset
 
 
                 result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { ':' });
+                Thread.Sleep(100);
+                return result[1];
 
-                if (result[1] == "l")
-                {
-                    return "-" + result[4];
-                }
-                else
-                {
-                    return result[4];
-                }
-                
+
             }
         }
 
@@ -560,7 +554,9 @@ namespace Fuset
             await Task.Run(() =>
             {
                 int luz_num = 0;
-                
+                string sing;
+                double bet = 0.00000001;
+
 
                 m_sqlCmd = m_dbConn.CreateCommand();
                 m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
@@ -576,28 +572,29 @@ namespace Fuset
                 string csrf_token = sqlite_datareader.GetString(0);
                 sqlite_datareader.Close();
 
-                double result = Convert.ToDouble(bet(Cookie, csrf_token, "0.00000001").Replace(".", ","));
+                
 
                 do
                 {
-                    if (result < 0)
+                    sing = Bet(Cookie, csrf_token, bet.ToString("F8"));
+                    UpdateLog3("(" + i + ")" + bet.ToString("F8") + "_" + luz_num + sing + "_" + wager.ToString("F8"));
+                    if (sing == "l")
                     {
+                        luz_num++;
+                        wager -= bet;
+
                         if (luz_num >= 6)
                         {
-                            result = result * 2;
+                            bet *= 2;
                         }
-
-                        luz_num++;
-                        wager += result;
+                        
                     }
                     else
                     {
                         luz_num = 0;
-                        wager -= result;
+                        wager -= bet;
+                        bet = 0.00000001;
                     }
-
-                    result = Convert.ToDouble(bet(Cookie, csrf_token, result.ToString("F8").Replace(",", ".")).Replace(".", ","));
-                    UpdateLog3(result.ToString("F8") + "_" + luz_num + "_" + wager.ToString("F8"));
 
                 } while (wager > 0 || luz_num != 0);
 
@@ -1149,6 +1146,7 @@ namespace Fuset
         {
             Action action = () =>
             {
+                richTextBox3.Clear();
                 richTextBox3.AppendText(s + "\n");
                 richTextBox3.ScrollToCaret();
             };
