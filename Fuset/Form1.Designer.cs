@@ -54,12 +54,13 @@
             this.checkBox4 = new System.Windows.Forms.CheckBox();
             this.label3 = new System.Windows.Forms.Label();
             this.richTextBox3 = new System.Windows.Forms.RichTextBox();
+            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // Go
             // 
-            this.Go.Location = new System.Drawing.Point(288, 25);
+            this.Go.Location = new System.Drawing.Point(12, 29);
             this.Go.Name = "Go";
             this.Go.Size = new System.Drawing.Size(75, 69);
             this.Go.TabIndex = 0;
@@ -69,7 +70,7 @@
             // 
             // richTextBox1
             // 
-            this.richTextBox1.Location = new System.Drawing.Point(369, 25);
+            this.richTextBox1.Location = new System.Drawing.Point(369, 31);
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.Size = new System.Drawing.Size(120, 193);
             this.richTextBox1.TabIndex = 2;
@@ -77,7 +78,7 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(138, 84);
+            this.button2.Location = new System.Drawing.Point(106, 84);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(108, 23);
             this.button2.TabIndex = 4;
@@ -87,7 +88,7 @@
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(378, 257);
+            this.button3.Location = new System.Drawing.Point(414, 315);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(75, 23);
             this.button3.TabIndex = 6;
@@ -112,7 +113,7 @@
             // checkBox1
             // 
             this.checkBox1.AutoSize = true;
-            this.checkBox1.Location = new System.Drawing.Point(138, 171);
+            this.checkBox1.Location = new System.Drawing.Point(106, 171);
             this.checkBox1.Name = "checkBox1";
             this.checkBox1.Size = new System.Drawing.Size(130, 17);
             this.checkBox1.TabIndex = 13;
@@ -122,7 +123,7 @@
             // checkBox2
             // 
             this.checkBox2.AutoSize = true;
-            this.checkBox2.Location = new System.Drawing.Point(138, 194);
+            this.checkBox2.Location = new System.Drawing.Point(106, 194);
             this.checkBox2.Name = "checkBox2";
             this.checkBox2.Size = new System.Drawing.Size(136, 17);
             this.checkBox2.TabIndex = 14;
@@ -131,7 +132,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(138, 113);
+            this.button1.Location = new System.Drawing.Point(106, 113);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(108, 23);
             this.button1.TabIndex = 15;
@@ -141,7 +142,7 @@
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(138, 231);
+            this.textBox1.Location = new System.Drawing.Point(93, 315);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(315, 20);
             this.textBox1.TabIndex = 16;
@@ -171,20 +172,20 @@
             this.менюToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.форматСпискаПрофилейToolStripMenuItem});
             this.менюToolStripMenuItem.Name = "менюToolStripMenuItem";
-            this.менюToolStripMenuItem.Size = new System.Drawing.Size(53, 20);
+            this.менюToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             this.менюToolStripMenuItem.Text = "Меню";
             // 
             // форматСпискаПрофилейToolStripMenuItem
             // 
             this.форматСпискаПрофилейToolStripMenuItem.Name = "форматСпискаПрофилейToolStripMenuItem";
-            this.форматСпискаПрофилейToolStripMenuItem.Size = new System.Drawing.Size(218, 22);
+            this.форматСпискаПрофилейToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.форматСпискаПрофилейToolStripMenuItem.Text = "Формат списка профилей";
             this.форматСпискаПрофилейToolStripMenuItem.Click += new System.EventHandler(this.форматСпискаПрофилейToolStripMenuItem_Click);
             // 
             // настройкиToolStripMenuItem
             // 
             this.настройкиToolStripMenuItem.Name = "настройкиToolStripMenuItem";
-            this.настройкиToolStripMenuItem.Size = new System.Drawing.Size(79, 20);
+            this.настройкиToolStripMenuItem.Size = new System.Drawing.Size(73, 20);
             this.настройкиToolStripMenuItem.Text = "Настройки";
             // 
             // button4
@@ -199,15 +200,15 @@
             // 
             // textBox5
             // 
-            this.textBox5.Location = new System.Drawing.Point(172, 58);
+            this.textBox5.Location = new System.Drawing.Point(106, 58);
             this.textBox5.Name = "textBox5";
-            this.textBox5.Size = new System.Drawing.Size(58, 20);
+            this.textBox5.Size = new System.Drawing.Size(42, 20);
             this.textBox5.TabIndex = 28;
             this.textBox5.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
             // button6
             // 
-            this.button6.Location = new System.Drawing.Point(288, 100);
+            this.button6.Location = new System.Drawing.Point(12, 104);
             this.button6.Name = "button6";
             this.button6.Size = new System.Drawing.Size(75, 23);
             this.button6.TabIndex = 29;
@@ -217,7 +218,7 @@
             // 
             // button7
             // 
-            this.button7.Location = new System.Drawing.Point(138, 29);
+            this.button7.Location = new System.Drawing.Point(106, 29);
             this.button7.Name = "button7";
             this.button7.Size = new System.Drawing.Size(108, 23);
             this.button7.TabIndex = 30;
@@ -227,7 +228,7 @@
             // 
             // richTextBox2
             // 
-            this.richTextBox2.Location = new System.Drawing.Point(12, 357);
+            this.richTextBox2.Location = new System.Drawing.Point(12, 344);
             this.richTextBox2.Name = "richTextBox2";
             this.richTextBox2.Size = new System.Drawing.Size(477, 129);
             this.richTextBox2.TabIndex = 33;
@@ -235,7 +236,7 @@
             // 
             // button5
             // 
-            this.button5.Location = new System.Drawing.Point(138, 142);
+            this.button5.Location = new System.Drawing.Point(106, 142);
             this.button5.Name = "button5";
             this.button5.Size = new System.Drawing.Size(108, 23);
             this.button5.TabIndex = 34;
@@ -256,7 +257,7 @@
             // checkBox4
             // 
             this.checkBox4.AutoSize = true;
-            this.checkBox4.Location = new System.Drawing.Point(9, 280);
+            this.checkBox4.Location = new System.Drawing.Point(12, 280);
             this.checkBox4.Name = "checkBox4";
             this.checkBox4.Size = new System.Drawing.Size(123, 17);
             this.checkBox4.TabIndex = 36;
@@ -274,17 +275,26 @@
             // 
             // richTextBox3
             // 
-            this.richTextBox3.Location = new System.Drawing.Point(12, 29);
+            this.richTextBox3.Location = new System.Drawing.Point(241, 31);
             this.richTextBox3.Name = "richTextBox3";
             this.richTextBox3.Size = new System.Drawing.Size(120, 193);
             this.richTextBox3.TabIndex = 38;
             this.richTextBox3.Text = "";
+            // 
+            // statusStrip1
+            // 
+            this.statusStrip1.Location = new System.Drawing.Point(0, 476);
+            this.statusStrip1.Name = "statusStrip1";
+            this.statusStrip1.Size = new System.Drawing.Size(501, 22);
+            this.statusStrip1.TabIndex = 39;
+            this.statusStrip1.Text = "statusStrip1";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(501, 498);
+            this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.richTextBox3);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.checkBox4);
@@ -348,6 +358,7 @@
         private System.Windows.Forms.CheckBox checkBox4;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.RichTextBox richTextBox3;
+        private System.Windows.Forms.StatusStrip statusStrip1;
     }
 }
 

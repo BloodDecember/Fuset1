@@ -44,6 +44,7 @@ namespace Fuset
         Uri imageURL;
         List<int> timing_list = new List<int>();
         List<int> multiply_list = new List<int>();
+        List<double> multiply3_list = new List<double>();
         ChromeOptions options;
         public IWebDriver driver;
         public IWebDriver driver1;
@@ -301,6 +302,7 @@ namespace Fuset
                 driver.FindElement(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")).Click();
 
                 UpdateLog2("(" + i + ")Найдено условие разблокировки бонусов, поставлено в очередь мультика.");
+                
                 multiply_list.Add(i);
                 multiply_list.Distinct();
 
@@ -313,6 +315,75 @@ namespace Fuset
             }
 
         }
+
+        public double check_multiply2(int i)
+        {
+            string[] result;
+            
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+            string Cookie = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+            string csrf_token = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+            int u = sqlite_datareader.GetInt32(0);
+            sqlite_datareader.Close();
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+            string p = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
+
+            var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                httpRequestMessage.Headers.Add("Accept", "*/*");
+                httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
+                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                Thread.Sleep(100);
+
+
+
+                if (Convert.ToDouble(result[result.Length - 2].Replace(".", ",")) <= 0)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return Convert.ToDouble(result[85].Replace(".", ","));
+                }
+                
+            }
+        }
+
 
         public async void multiply2(int i)
         {
@@ -544,15 +615,29 @@ namespace Fuset
                 result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { ':' });
                 Thread.Sleep(100);
                 return result[1];
-
-
             }
         }
 
-        public async void multiply3(int i, double wager)
+        public async void multiply3(int i)
         {
             await Task.Run(() =>
             {
+                if (multiply_list.Contains(i))
+                {
+                    return;
+                }
+
+                multiply_list.Add(i);
+
+                double wager = check_multiply2(i);
+
+                if (wager == 0)
+                {
+                    timing_list[i] = 10;
+                    multiply_list.Remove(i);
+                    return;
+                }
+
                 int luz_num = 0;
                 string sing;
                 double bet = 0.00000001;
@@ -577,7 +662,10 @@ namespace Fuset
                 do
                 {
                     sing = Bet(Cookie, csrf_token, bet.ToString("F8"));
-                    UpdateLog3("(" + i + ")" + bet.ToString("F8") + "_" + luz_num + sing + "_" + wager.ToString("F8"));
+                    //UpdateLog3("(" + i + ")" + bet.ToString("F8") + "_" + luz_num + sing + "_" + wager.ToString("F8"));
+
+                    multiply3_list[i] = wager;
+
                     if (sing == "l")
                     {
                         luz_num++;
@@ -598,8 +686,8 @@ namespace Fuset
 
                 } while (wager > 0 || luz_num != 0);
 
-
-
+                timing_list[i] = 10;
+                multiply_list.Remove(i);
             });
         }
 
@@ -864,9 +952,10 @@ namespace Fuset
 
             reader.Close();
 
-            //UpdateLog(Convert.ToString(timing_list[0]));
-            //UpdateLog(Convert.ToString(timing_list[1]));
-            //UpdateLog(Convert.ToString(timing_list.Count));
+            foreach (var item in timing_list)
+            {
+                multiply3_list.Add(0);
+            }
         }
 
         public string data_get_akk(int id_prof)
@@ -1146,9 +1235,9 @@ namespace Fuset
         {
             Action action = () =>
             {
-                richTextBox3.Clear();
+                
                 richTextBox3.AppendText(s + "\n");
-                richTextBox3.ScrollToCaret();
+                
             };
 
             Invoke(action);
@@ -1345,6 +1434,8 @@ namespace Fuset
         {
             await Task.Run(() =>
             {
+                multiply3(i);
+
                 options = new ChromeOptions();
                 Proxy proxy = new Proxy();
                 proxy.Kind = ProxyKind.Manual;
@@ -1353,7 +1444,7 @@ namespace Fuset
                 proxy.SslProxy = data_get_proxy(i);
                 options.Proxy = proxy;
                 options.AddArgument("ignore-certificate-errors");
-                //options.AddArgument("--headless");
+                options.AddArgument("--headless");
                 options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
                 options.AddArguments("--start-maximized");
                 driver = new ChromeDriver(options);
@@ -1405,7 +1496,7 @@ namespace Fuset
                         timing_list[i] = 2000;
                     }
 
-                    check_multiply(driver, i);
+                    
                     driver.Quit();
                     busy = false;
                     return;
@@ -1413,7 +1504,7 @@ namespace Fuset
                 catch (Exception)
                 {
                     UpdateLog2("(" + i + ")Кулдаун не обнаружен.");
-                    rush = true;
+                    
                 }
                 
                 try
@@ -1447,8 +1538,7 @@ namespace Fuset
                     return;
                 }
 
-                UpdateLog2("(" + i + ")Запись баланса...");
-                write_balance(driver, i);
+                
                 
 
                 try
@@ -1458,16 +1548,10 @@ namespace Fuset
                 }
                 catch (Exception)
                 {
-                    if (rush)
-                    {
-                        multiply_list.Insert(0, i);
-                    }
-                    else
-                    {
-                        multiply_list.Add(i);
-                    }
-                    multiply_list = multiply_list.Distinct().ToList();
+                    
+                    
                     UpdateLog2("(" + i + ")Текстовая капча недоступна " + i + " поставлена в очередь мультика.");
+                    multiply3(i);
                     timing_list[i] = 1000;
                     driver.Quit();
                     busy = false;
@@ -1488,7 +1572,9 @@ namespace Fuset
                         busy = false;
                         break;
                     }
-                    bonus(driver);
+
+                    if (checkBox1.Checked || checkBox2.Checked)
+                        bonus(driver);
                     Thread.Sleep(1000);
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
 
@@ -1506,9 +1592,9 @@ namespace Fuset
                             timing_list[i] = 2000;
                         }
 
-                        write_faucet(driver, i);
+                        
 
-                        check_multiply(driver, i);
+                        
                         driver.Quit();
                         busy = false;
                         return;
@@ -1610,6 +1696,7 @@ namespace Fuset
         private void timer1_Tick(object sender, EventArgs e)
         {
             richTextBox1.Clear();
+            richTextBox3.Clear();
             for (int i = 0; i < timing_list.Count; i++)
                 {
                 timing_list[i]--;
@@ -1633,20 +1720,24 @@ namespace Fuset
                 {
                     UpdateLog(Convert.ToString(item) + "\t");
                 }
+
+                foreach (var item in multiply3_list)
+                {
+                    UpdateLog3(item.ToString("F8") + "\t");
+                }
             }
             catch (Exception)
             {
                 
             }
-                
 
-            if (multiply_list.Count != 0 && multiply_busy == false && stepped != multiply_list[0])
-            {
-                UpdateLog2("(" + multiply_list[0] + ")Multed = " + multiply_list[0]);
-                multed = multiply_list[0];
-                multiply_busy = true;
-                multiply2(multiply_list[0]);
-            }
+            //if (multiply_list.Count != 0 && multiply_busy == false && stepped != multiply_list[0])
+            //{
+            //    UpdateLog2("(" + multiply_list[0] + ")Multed = " + multiply_list[0]);
+            //    multed = multiply_list[0];
+            //    multiply_busy = true;
+            //    multiply2(multiply_list[0]);
+            //}
 
             Time -= 1;
         }
@@ -1680,7 +1771,7 @@ namespace Fuset
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Faucet_num (id INTEGER PRIMARY KEY, Date TEXT, Akk INTEGER, faucet INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Cookie_setting (id INTEGER PRIMARY KEY, Cookie TEXT, csrf_token TEXT)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Cookie_setting (id INTEGER PRIMARY KEY, Cookie TEXT, csrf_token TEXT, u INTEGER, p TEXT)";
                 m_sqlCmd.ExecuteNonQuery();
 
             }
@@ -1747,9 +1838,10 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            multiply3(9, 0.00000200);
-            //UpdateLog2(Convert.ToString(Convert.ToInt32("l")));
+            
+            UpdateLog2(Convert.ToString(check_multiply2(9)));
         }
+
 
         private void button7_Click(object sender, EventArgs e)//обновление
         {
