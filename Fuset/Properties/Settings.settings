@@ -5,8 +5,8 @@
     <Setting Name="autostart" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="SomeProperty" Type="System.String" Scope="Application">
-      <Value Profile="(Default)" />
+    <Setting Name="bonus" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>

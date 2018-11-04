@@ -87,29 +87,130 @@ namespace Fuset
             }
         }
 
-        public void write_balance(IWebDriver driver, int i)
+        public void write_balance(int i)
         {
             int balance;
+            int free_spins_played;
+            string[] result;
 
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+            SQLiteCommand Command;//m_sqlCmd
+            SQLiteDataReader Reader;//sqlite_datareader
 
-            balance = Convert.ToInt32(driver.FindElement(By.Id("balance")).Text.Replace(".", ""));
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string Cookie = Reader.GetString(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string csrf_token = Reader.GetString(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            int u = Reader.GetInt32(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string p = Reader.GetString(0);
+            Reader.Close();
+
+
+            var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                httpRequestMessage.Headers.Add("Accept", "*/*");
+                httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
+                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                Thread.Sleep(100);
+
+
+                balance = Convert.ToInt32(result[result.Length - 19].Substring(1, result[result.Length - 19].Length - 3));
+                UpdateLog2(balance.ToString());
+            }
+
+            baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats_initial&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                httpRequestMessage.Headers.Add("Accept", "*/*");
+                httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
+                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                Thread.Sleep(100);
+
+
+                free_spins_played = Convert.ToInt32(result[result.Length - 21].Substring(1, result[result.Length - 21].Length - 2));
+                UpdateLog2(Convert.ToString(free_spins_played));
+            }
+
 
             m_sqlCmd = m_dbConn.CreateCommand();
             m_sqlCmd.CommandText = "SELECT id FROM Balance WHERE id ='" + i + "'";
             try
             {
                 sqlite_datareader = m_sqlCmd.ExecuteReader();
-                sqlite_datareader.Read(); //sqlite_datareader.GetInt32(0)
+                sqlite_datareader.Read();
                 sqlite_datareader.GetInt32(0);
                 sqlite_datareader.Close();
                 m_sqlCmd.CommandText = "update Balance set satoshi = " + balance + " where ID = " + i;
                 m_sqlCmd.ExecuteNonQuery();
             }
-            catch (System.InvalidOperationException)
+            catch (InvalidOperationException)
             {
                 sqlite_datareader.Close();
                 m_sqlCmd.CommandText = "INSERT INTO Balance ('id', 'satoshi') values ('" + i + "', '" + balance + "' )";
+
+                m_sqlCmd.ExecuteNonQuery();
+            }
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT id FROM Faucet_num WHERE id ='" + i + "'";
+            try
+            {
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read();
+                sqlite_datareader.GetInt32(0);
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "update Faucet_num set faucet = " + free_spins_played + " where ID = " + i;
+                m_sqlCmd.ExecuteNonQuery();
+            }
+            catch (InvalidOperationException)
+            {
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "INSERT INTO Faucet_num (id, faucet) values ('" + i + "', '" + free_spins_played + "' )";
 
                 m_sqlCmd.ExecuteNonQuery();
             }
@@ -319,35 +420,39 @@ namespace Fuset
         public double check_multiply2(int i)
         {
             string[] result;
-            
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-            string Cookie = sqlite_datareader.GetString(0);
-            sqlite_datareader.Close();
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-            string csrf_token = sqlite_datareader.GetString(0);
-            sqlite_datareader.Close();
+            SQLiteCommand Command;//m_sqlCmd
+            SQLiteDataReader Reader;//sqlite_datareader
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-            int u = sqlite_datareader.GetInt32(0);
-            sqlite_datareader.Close();
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-            string p = sqlite_datareader.GetString(0);
-            sqlite_datareader.Close();
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string Cookie = Reader.GetString(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string csrf_token = Reader.GetString(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            int u = Reader.GetInt32(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string p = Reader.GetString(0);
+            Reader.Close();
 
 
             var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
@@ -378,12 +483,11 @@ namespace Fuset
                 }
                 else
                 {
-                    return Convert.ToDouble(result[85].Replace(".", ","));
+                    return Convert.ToDouble(result[result.Length - 2].Replace(".", ","));
                 }
                 
             }
         }
-
 
         public async void multiply2(int i)
         {
@@ -620,6 +724,21 @@ namespace Fuset
 
         public async void multiply3(int i)
         {
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+            string Cookie = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+            string csrf_token = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
             await Task.Run(() =>
             {
                 if (multiply_list.Contains(i))
@@ -643,19 +762,7 @@ namespace Fuset
                 double bet = 0.00000001;
 
 
-                m_sqlCmd = m_dbConn.CreateCommand();
-                m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
-                sqlite_datareader = m_sqlCmd.ExecuteReader();
-                sqlite_datareader.Read();
-                string Cookie = sqlite_datareader.GetString(0);
-                sqlite_datareader.Close();
-
-                m_sqlCmd = m_dbConn.CreateCommand();
-                m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
-                sqlite_datareader = m_sqlCmd.ExecuteReader();
-                sqlite_datareader.Read();
-                string csrf_token = sqlite_datareader.GetString(0);
-                sqlite_datareader.Close();
+                
 
                 
 
@@ -1430,6 +1537,11 @@ namespace Fuset
 
         }
 
+        public void bonus2(IWebDriver driver)
+        {
+        }
+
+
         public async void Step3(int i)
         {
             await Task.Run(() =>
@@ -1444,7 +1556,7 @@ namespace Fuset
                 proxy.SslProxy = data_get_proxy(i);
                 options.Proxy = proxy;
                 options.AddArgument("ignore-certificate-errors");
-                options.AddArgument("--headless");
+                //options.AddArgument("--headless");
                 options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
                 options.AddArguments("--start-maximized");
                 driver = new ChromeDriver(options);
@@ -1621,11 +1733,7 @@ namespace Fuset
 
             UpdateLog2("(" + i + ")Stepped пуст.");
             stepped = 777;
-            label3.Text = "";
-            foreach (var item in multiply_list)
-            {
-                label3.Text += item + " ";
-            }
+            
             try
             {
                 driver.Quit();
@@ -1768,7 +1876,7 @@ namespace Fuset
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Balance (id INTEGER PRIMARY KEY, satoshi INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Faucet_num (id INTEGER PRIMARY KEY, Date TEXT, Akk INTEGER, faucet INTEGER)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Faucet_num (id INTEGER PRIMARY KEY, faucet INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Cookie_setting (id INTEGER PRIMARY KEY, Cookie TEXT, csrf_token TEXT, u INTEGER, p TEXT)";
@@ -1799,7 +1907,14 @@ namespace Fuset
                 timer1.Start();
                 Go.Text = "Стапэ!";
             }
-            
+
+            if (Properties.Settings.Default.bonus)
+            {
+                checkBox1.Checked = true;
+                checkBox2.Checked = true;
+
+            }
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -1807,26 +1922,9 @@ namespace Fuset
             int i = 0;
             foreach (var item in timing_list)
             {
-                options = new ChromeOptions();
-                Proxy proxy = new Proxy();
-                proxy.Kind = ProxyKind.Manual;
-                proxy.IsAutoDetect = false;
-                proxy.HttpProxy = data_get_proxy(i);
-                proxy.SslProxy = data_get_proxy(i);
-                options.Proxy = proxy;
-                options.AddArgument("ignore-certificate-errors");
-
-                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
-                options.AddArguments("--start-maximized");
-                driver = new ChromeDriver(options);
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-                driver.Navigate().GoToUrl("https://freebitco.in/");
-
-                write_faucet_num(driver, i);
-                write_balance(driver, i);
+                
+                write_balance(i);
                 i++;
-                driver.Quit();
             }
         }
 
@@ -1838,8 +1936,8 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            
-            UpdateLog2(Convert.ToString(check_multiply2(9)));
+
+            write_balance(9);
         }
 
 
@@ -1878,6 +1976,20 @@ namespace Fuset
             else
             {
                 Properties.Settings.Default.autostart = false;
+            }
+
+            Properties.Settings.Default.Save();
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox1.Checked)
+            {
+                Properties.Settings.Default.bonus = true;
+            }
+            else
+            {
+                Properties.Settings.Default.bonus = false;
             }
 
             Properties.Settings.Default.Save();
