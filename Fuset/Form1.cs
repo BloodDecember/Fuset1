@@ -753,9 +753,7 @@ namespace Fuset
 
                 if (wager > 0.00005)
                 {
-                    timing_list[i] = 10;
-                    multiply_list.Remove(i);
-                    return;
+                    wager = 0.00002;
                 }
                 if (wager == 0)
                 {
