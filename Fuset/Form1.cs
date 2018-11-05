@@ -750,6 +750,13 @@ namespace Fuset
 
                 double wager = check_multiply2(i);
 
+
+                if (wager > 0.00005)
+                {
+                    timing_list[i] = 10;
+                    multiply_list.Remove(i);
+                    return;
+                }
                 if (wager == 0)
                 {
                     timing_list[i] = 10;
