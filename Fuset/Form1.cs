@@ -57,9 +57,34 @@ namespace Fuset
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
 
-        public static void KillPaint(string name)
+        public void screen()
         {
-            System.Diagnostics.Process[] procs = null;
+            Graphics graph = null;
+
+            var bmp = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+
+            graph = Graphics.FromImage(bmp);
+
+            graph.CopyFromScreen(0, 0, 0, 0, bmp.Size);
+            try
+            {
+                bmp.Save(Application.StartupPath + @"\reload\" + Convert.ToString(DateTime.Now).Replace(":", "_") + ".jpg");
+            }
+            catch (System.Runtime.InteropServices.ExternalException)
+            {
+                DirectoryInfo dirInfo = new DirectoryInfo(Application.StartupPath + @"\reload");
+                if (!dirInfo.Exists)
+                {
+                    dirInfo.Create();
+                }
+                bmp.Save(Application.StartupPath + @"\reload\" + Convert.ToString(DateTime.Now).Replace(":", "_") + ".jpg");
+
+            }
+        }
+
+        public static void KillChrome(string name)
+        {
+            Process[] procs = null;
 
             try
             {
@@ -72,8 +97,8 @@ namespace Fuset
                         item.Kill();
                     }
                 }
-                 
-                
+
+
             }
             finally
             {
@@ -1380,6 +1405,9 @@ namespace Fuset
                 {
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
 
+                    
+
+
                     driver.FindElement(By.PartialLinkText("REWARDS")).Click();
                     old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
                     FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]").Click();
@@ -1418,6 +1446,8 @@ namespace Fuset
                     //if (old_RP >= 4400) { UpdateLog2("Активируем бонус за 3200 на счету " + old_RP + "RP"); }
                 }
 
+                
+
                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
                 driver.FindElement(By.PartialLinkText("FREE BTC")).Click();
             }
@@ -1444,7 +1474,7 @@ namespace Fuset
                 proxy.SslProxy = data_get_proxy(i);
                 options.Proxy = proxy;
                 options.AddArgument("ignore-certificate-errors");
-                options.AddArgument("--headless");
+                //options.AddArgument("--headless");
                 options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
                 options.AddArguments("--start-maximized");
                 driver = new ChromeDriver(options);
@@ -1621,11 +1651,7 @@ namespace Fuset
 
             UpdateLog2("(" + i + ")Stepped пуст.");
             stepped = 777;
-            label3.Text = "";
-            foreach (var item in multiply_list)
-            {
-                label3.Text += item + " ";
-            }
+            
             try
             {
                 driver.Quit();
@@ -1711,6 +1737,9 @@ namespace Fuset
 
                 if (timing_list[i] <= -1000)
                 {
+                    KillChrome("chrome");
+                    KillChrome("chromedriver");
+                    screen();
                     this.Close();
                 }
             }
@@ -1838,8 +1867,8 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
+            timing_list[0] = -1200;
             
-            UpdateLog2(Convert.ToString(check_multiply2(9)));
         }
 
 
