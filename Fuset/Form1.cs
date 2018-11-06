@@ -57,9 +57,34 @@ namespace Fuset
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
 
-        public static void KillPaint(string name)
+        public void screen()
         {
-            System.Diagnostics.Process[] procs = null;
+            Graphics graph = null;
+
+            var bmp = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+
+            graph = Graphics.FromImage(bmp);
+
+            graph.CopyFromScreen(0, 0, 0, 0, bmp.Size);
+            try
+            {
+                bmp.Save(Application.StartupPath + @"\reload\" + Convert.ToString(DateTime.Now).Replace(":", "_") + ".jpg");
+            }
+            catch (System.Runtime.InteropServices.ExternalException)
+            {
+                DirectoryInfo dirInfo = new DirectoryInfo(Application.StartupPath + @"\reload");
+                if (!dirInfo.Exists)
+                {
+                    dirInfo.Create();
+                }
+                bmp.Save(Application.StartupPath + @"\reload\" + Convert.ToString(DateTime.Now).Replace(":", "_") + ".jpg");
+
+            }
+        }
+
+        public static void KillChrome(string name)
+        {
+            Process[] procs = null;
 
             try
             {
@@ -1824,6 +1849,9 @@ namespace Fuset
 
                 if (timing_list[i] <= -1000)
                 {
+                    KillChrome("chrome");
+                    KillChrome("chromedriver");
+                    screen();
                     this.Close();
                 }
             }
@@ -1941,8 +1969,7 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-
-            write_balance(9);
+            timing_list[0] = -1200;
         }
 
 
@@ -1985,8 +2012,9 @@ namespace Fuset
 
             Properties.Settings.Default.Save();
         }
+        
 
-        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        private void checkBox1_CheckedChanged_1(object sender, EventArgs e)
         {
             if (checkBox1.Checked)
             {

@@ -119,6 +119,7 @@
             this.checkBox1.TabIndex = 13;
             this.checkBox1.Text = "Активация бонус RP";
             this.checkBox1.UseVisualStyleBackColor = true;
+            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged_1);
             // 
             // checkBox2
             // 
@@ -172,20 +173,20 @@
             this.менюToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.форматСпискаПрофилейToolStripMenuItem});
             this.менюToolStripMenuItem.Name = "менюToolStripMenuItem";
-            this.менюToolStripMenuItem.Size = new System.Drawing.Size(53, 20);
+            this.менюToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             this.менюToolStripMenuItem.Text = "Меню";
             // 
             // форматСпискаПрофилейToolStripMenuItem
             // 
             this.форматСпискаПрофилейToolStripMenuItem.Name = "форматСпискаПрофилейToolStripMenuItem";
-            this.форматСпискаПрофилейToolStripMenuItem.Size = new System.Drawing.Size(218, 22);
+            this.форматСпискаПрофилейToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.форматСпискаПрофилейToolStripMenuItem.Text = "Формат списка профилей";
             this.форматСпискаПрофилейToolStripMenuItem.Click += new System.EventHandler(this.форматСпискаПрофилейToolStripMenuItem_Click);
             // 
             // настройкиToolStripMenuItem
             // 
             this.настройкиToolStripMenuItem.Name = "настройкиToolStripMenuItem";
-            this.настройкиToolStripMenuItem.Size = new System.Drawing.Size(79, 20);
+            this.настройкиToolStripMenuItem.Size = new System.Drawing.Size(73, 20);
             this.настройкиToolStripMenuItem.Text = "Настройки";
             // 
             // button4
