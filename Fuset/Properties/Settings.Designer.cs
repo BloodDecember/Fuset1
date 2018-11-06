@@ -35,12 +35,15 @@ namespace Fuset.Properties {
             }
         }
         
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string SomeProperty {
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool bonus {
             get {
-                return ((string)(this["SomeProperty"]));
+                return ((bool)(this["bonus"]));
+            }
+            set {
+                this["bonus"] = value;
             }
         }
     }
