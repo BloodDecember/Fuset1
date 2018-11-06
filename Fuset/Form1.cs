@@ -24,7 +24,7 @@ using OpenQA.Selenium.Support.UI;
 
 namespace Fuset
 {
-    
+
     public partial class Form1 : Form
     {
         string PuthToPicture;
@@ -48,7 +48,7 @@ namespace Fuset
         ChromeOptions options;
         public IWebDriver driver;
         public IWebDriver driver1;
-        
+
 
 
 
@@ -57,34 +57,9 @@ namespace Fuset
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
 
-        public void screen()
+        public static void KillPaint(string name)
         {
-            Graphics graph = null;
-
-            var bmp = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
-
-            graph = Graphics.FromImage(bmp);
-
-            graph.CopyFromScreen(0, 0, 0, 0, bmp.Size);
-            try
-            {
-                bmp.Save(Application.StartupPath + @"\reload\" + Convert.ToString(DateTime.Now).Replace(":", "_") + ".jpg");
-            }
-            catch (System.Runtime.InteropServices.ExternalException)
-            {
-                DirectoryInfo dirInfo = new DirectoryInfo(Application.StartupPath + @"\reload");
-                if (!dirInfo.Exists)
-                {
-                    dirInfo.Create();
-                }
-                bmp.Save(Application.StartupPath + @"\reload\" + Convert.ToString(DateTime.Now).Replace(":", "_") + ".jpg");
-
-            }
-        }
-
-        public static void KillChrome(string name)
-        {
-            Process[] procs = null;
+            System.Diagnostics.Process[] procs = null;
 
             try
             {
@@ -112,29 +87,130 @@ namespace Fuset
             }
         }
 
-        public void write_balance(IWebDriver driver, int i)
+        public void write_balance(int i)
         {
             int balance;
+            int free_spins_played;
+            string[] result;
 
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+            SQLiteCommand Command;//m_sqlCmd
+            SQLiteDataReader Reader;//sqlite_datareader
 
-            balance = Convert.ToInt32(driver.FindElement(By.Id("balance")).Text.Replace(".", ""));
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string Cookie = Reader.GetString(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string csrf_token = Reader.GetString(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            int u = Reader.GetInt32(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string p = Reader.GetString(0);
+            Reader.Close();
+
+
+            var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                httpRequestMessage.Headers.Add("Accept", "*/*");
+                httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
+                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                Thread.Sleep(100);
+
+
+                balance = Convert.ToInt32(result[result.Length - 19].Substring(1, result[result.Length - 19].Length - 3));
+                UpdateLog2(balance.ToString());
+            }
+
+            baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats_initial&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                httpRequestMessage.Headers.Add("Accept", "*/*");
+                httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
+                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                Thread.Sleep(100);
+
+
+                free_spins_played = Convert.ToInt32(result[result.Length - 21].Substring(1, result[result.Length - 21].Length - 2));
+                UpdateLog2(Convert.ToString(free_spins_played));
+            }
+
 
             m_sqlCmd = m_dbConn.CreateCommand();
             m_sqlCmd.CommandText = "SELECT id FROM Balance WHERE id ='" + i + "'";
             try
             {
                 sqlite_datareader = m_sqlCmd.ExecuteReader();
-                sqlite_datareader.Read(); //sqlite_datareader.GetInt32(0)
+                sqlite_datareader.Read();
                 sqlite_datareader.GetInt32(0);
                 sqlite_datareader.Close();
                 m_sqlCmd.CommandText = "update Balance set satoshi = " + balance + " where ID = " + i;
                 m_sqlCmd.ExecuteNonQuery();
             }
-            catch (System.InvalidOperationException)
+            catch (InvalidOperationException)
             {
                 sqlite_datareader.Close();
                 m_sqlCmd.CommandText = "INSERT INTO Balance ('id', 'satoshi') values ('" + i + "', '" + balance + "' )";
+
+                m_sqlCmd.ExecuteNonQuery();
+            }
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT id FROM Faucet_num WHERE id ='" + i + "'";
+            try
+            {
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read();
+                sqlite_datareader.GetInt32(0);
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "update Faucet_num set faucet = " + free_spins_played + " where ID = " + i;
+                m_sqlCmd.ExecuteNonQuery();
+            }
+            catch (InvalidOperationException)
+            {
+                sqlite_datareader.Close();
+                m_sqlCmd.CommandText = "INSERT INTO Faucet_num (id, faucet) values ('" + i + "', '" + free_spins_played + "' )";
 
                 m_sqlCmd.ExecuteNonQuery();
             }
@@ -147,7 +223,7 @@ namespace Fuset
             int RP = Convert.ToInt32(driver.FindElement(By.Id("fp_reward_points_won")).Text.Replace(".", ""));
             int BTC = Convert.ToInt32(driver.FindElement(By.Id("winnings")).Text.Replace(".", ""));
 
-            
+
 
             m_sqlCmd = m_dbConn.CreateCommand();
             m_sqlCmd.CommandText = "SELECT id FROM Log WHERE (Date, Akk) = (" + date + ", " + i + ")";
@@ -157,7 +233,7 @@ namespace Fuset
                 sqlite_datareader.Read(); //sqlite_datareader.GetInt32(0)
                 sqlite_datareader.GetInt32(0);
                 sqlite_datareader.Close();
-                m_sqlCmd.CommandText = "update Log set (Faucet, RP, BTC) = (Faucet+1, RP+" + RP + ", BTC+" + BTC + ") where (Date, Akk) = (" + date + ", " + i +")";
+                m_sqlCmd.CommandText = "update Log set (Faucet, RP, BTC) = (Faucet+1, RP+" + RP + ", BTC+" + BTC + ") where (Date, Akk) = (" + date + ", " + i + ")";
                 m_sqlCmd.ExecuteNonQuery();
             }
             catch (InvalidOperationException)
@@ -217,7 +293,7 @@ namespace Fuset
             {
                 try
                 {
-                    
+
                     FandS(driver, "REQUIREMENTS TO UNLOCK BONUSES").Click();
                     Thread.Sleep(1000);
                     FandS(driver, "//*[@id='unblock_modal_rp_bonuses_container']/div[1]").Click();
@@ -249,7 +325,7 @@ namespace Fuset
                         if (luz_num >= 5)
                         {
                             result = result * 2;
-                            
+
                             if (words[0] == driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[1]")).Text)
                             {
                                 while (words[0] == driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[1]")).Text)
@@ -276,7 +352,7 @@ namespace Fuset
                             //Thread.Sleep(200);
                             driver.FindElement(By.Id("double_your_btc_stake")).SendKeys("h");
                         }
-                        
+
                         Thread.Sleep(400);
                         result = Convert.ToDouble(driver.FindElement(By.XPath("//*[@id='bet_history_table_rows']/div[3]/div[1]/div[7]/font")).Text.Replace(".", ","));
 
@@ -314,12 +390,12 @@ namespace Fuset
             driver.Navigate().Refresh();
 
             wait.Until(ExpectedConditions.ElementIsVisible(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
-            
-                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.CssSelector(".large-12.fixed")));
-                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
+
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display:none;');", driver.FindElement(By.CssSelector(".large-12.fixed")));
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")));
 
 
-                driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
+            driver.FindElement(By.PartialLinkText("REQUIREMENTS TO UNLOCK BONUSES")).Click();
             //Thread.Sleep(1000);
             try
             {
@@ -327,7 +403,7 @@ namespace Fuset
                 driver.FindElement(By.XPath("//*[@id='unblock_modal_rp_bonuses_container']/div[1]")).Click();
 
                 UpdateLog2("(" + i + ")Найдено условие разблокировки бонусов, поставлено в очередь мультика.");
-                
+
                 multiply_list.Add(i);
                 multiply_list.Distinct();
 
@@ -344,35 +420,39 @@ namespace Fuset
         public double check_multiply2(int i)
         {
             string[] result;
-            
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-            string Cookie = sqlite_datareader.GetString(0);
-            sqlite_datareader.Close();
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-            string csrf_token = sqlite_datareader.GetString(0);
-            sqlite_datareader.Close();
+            SQLiteCommand Command;//m_sqlCmd
+            SQLiteDataReader Reader;//sqlite_datareader
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-            int u = sqlite_datareader.GetInt32(0);
-            sqlite_datareader.Close();
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-            string p = sqlite_datareader.GetString(0);
-            sqlite_datareader.Close();
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string Cookie = Reader.GetString(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string csrf_token = Reader.GetString(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            int u = Reader.GetInt32(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string p = Reader.GetString(0);
+            Reader.Close();
 
 
             var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
@@ -403,19 +483,18 @@ namespace Fuset
                 }
                 else
                 {
-                    return Convert.ToDouble(result[85].Replace(".", ","));
+                    return Convert.ToDouble(result[result.Length - 2].Replace(".", ","));
                 }
-                
+
             }
         }
 
-
         public async void multiply2(int i)
         {
-                await Task.Run(() =>
+            await Task.Run(() =>
+            {
+                try
                 {
-                    try
-                    {
                     string[] words;
                     double result = 0.00000001;
                     int luz_num = 0;
@@ -463,19 +542,19 @@ namespace Fuset
                         return;
                     }
 
-                    ((IJavaScriptExecutor)driver1).ExecuteScript("arguments[0].setAttribute('style','display');", driver1.FindElement(By.CssSelector(".large-12.fixed")));
+                ((IJavaScriptExecutor)driver1).ExecuteScript("arguments[0].setAttribute('style','display');", driver1.FindElement(By.CssSelector(".large-12.fixed")));
 
                     int old_btc = Convert.ToInt32(driver1.FindElement(By.Id("balance")).Text.Replace(".", ""));
 
                     if (old_btc < 20000)
                     {
-                            UpdateLog2("(" + i + ")баланс меньше 20000, отмена мультика.");
-                            multiply_list.Remove(i);
-                            timing_list[i] = 3600;
-                            driver1.Quit();
-                            multiply_busy = false;
-                            multed = 777;
-                            return;
+                        UpdateLog2("(" + i + ")баланс меньше 20000, отмена мультика.");
+                        multiply_list.Remove(i);
+                        timing_list[i] = 3600;
+                        driver1.Quit();
+                        multiply_busy = false;
+                        multed = 777;
+                        return;
                     }
 
 
@@ -496,14 +575,14 @@ namespace Fuset
                     }
                     catch (Exception)
                     {
-                            timing_list[i] = 10;
-                            
-                            multiply_list.Remove(i);
-                            driver1.Quit();
-                            multiply_busy = false;
-                            multed = 777;
-                            return;
-                        }
+                        timing_list[i] = 10;
+
+                        multiply_list.Remove(i);
+                        driver1.Quit();
+                        multiply_busy = false;
+                        multed = 777;
+                        return;
+                    }
 
                     //if (wager >= 0.00002000)
                     //{
@@ -511,7 +590,7 @@ namespace Fuset
                     //    old_wager = 2000;
                     //}
 
-                    
+
                     driver1.FindElement(By.PartialLinkText("MULTIPLY BTC")).Click();
                     do
                     {
@@ -593,20 +672,20 @@ namespace Fuset
                     multiply_busy = false;
                     multed = 777;
                     return;
-                    }
+                }
 
-                    catch (Exception ex)
-                    {
-                        UpdateLog2("Ошибка мультика" + ex);
-                        timing_list[i] = 10;
-                        driver1.Quit();
-                        multiply_busy = false;
-                        multed = 777;
-                        return;
-                    }
-        });
+                catch (Exception ex)
+                {
+                    UpdateLog2("Ошибка мультика" + ex);
+                    timing_list[i] = 10;
+                    driver1.Quit();
+                    multiply_busy = false;
+                    multed = 777;
+                    return;
+                }
+            });
 
-            
+
 
 
         }
@@ -645,6 +724,21 @@ namespace Fuset
 
         public async void multiply3(int i)
         {
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+            string Cookie = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+            string csrf_token = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
             await Task.Run(() =>
             {
                 if (multiply_list.Contains(i))
@@ -656,6 +750,11 @@ namespace Fuset
 
                 double wager = check_multiply2(i);
 
+
+                if (wager > 0.00005)
+                {
+                    wager = 0.00002;
+                }
                 if (wager == 0)
                 {
                     timing_list[i] = 10;
@@ -668,21 +767,9 @@ namespace Fuset
                 double bet = 0.00000001;
 
 
-                m_sqlCmd = m_dbConn.CreateCommand();
-                m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
-                sqlite_datareader = m_sqlCmd.ExecuteReader();
-                sqlite_datareader.Read();
-                string Cookie = sqlite_datareader.GetString(0);
-                sqlite_datareader.Close();
 
-                m_sqlCmd = m_dbConn.CreateCommand();
-                m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
-                sqlite_datareader = m_sqlCmd.ExecuteReader();
-                sqlite_datareader.Read();
-                string csrf_token = sqlite_datareader.GetString(0);
-                sqlite_datareader.Close();
 
-                
+
 
                 do
                 {
@@ -700,7 +787,7 @@ namespace Fuset
                         {
                             bet *= 2;
                         }
-                        
+
                     }
                     else
                     {
@@ -731,11 +818,11 @@ namespace Fuset
             String uriString = "http://rucaptcha.com/in.php?key=" + textBox1.Text;
             WebClient myWebClient = new WebClient();
 
-            
+
             byte[] responseArray = myWebClient.UploadFile(uriString, localFilename);
             string text = Encoding.ASCII.GetString(responseArray).Substring(3);                 //ID капчи
 
-            
+
             byte[] postArray = Encoding.ASCII.GetBytes(text);
             uriString = "http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=get&id=" + text;
 
@@ -784,7 +871,7 @@ namespace Fuset
 
             return true;
         }
-        
+
         public void send_vk(string text, IWebDriver driver)
         {
             ((IJavaScriptExecutor)driver).ExecuteScript("window.open()");
@@ -873,7 +960,7 @@ namespace Fuset
             string new_proxy;
             int usage;
 
-            
+
             try
             {
                 m_sqlCmd = m_dbConn.CreateCommand();
@@ -881,7 +968,7 @@ namespace Fuset
                 sqlite_datareader = m_sqlCmd.ExecuteReader();
                 sqlite_datareader.Read();
                 usage = sqlite_datareader.GetInt32(0);
-                
+
             }
             catch (System.InvalidOperationException)
             {
@@ -901,7 +988,7 @@ namespace Fuset
                 sqlite_datareader = m_sqlCmd.ExecuteReader();
                 sqlite_datareader.Read();
                 usage = sqlite_datareader.GetInt32(0);
-                
+
             }
 
             sqlite_datareader.Close();
@@ -929,7 +1016,7 @@ namespace Fuset
                 sqlite_datareader.Read();
 
                 new_proxy = sqlite_datareader.GetString(0);
-                
+
                 sqlite_datareader.Close();
 
                 m_sqlCmd.CommandText = "update Setting set proxy = '" + new_proxy + "' where ID=" + id_prof;
@@ -946,7 +1033,7 @@ namespace Fuset
                 UpdateLog2("Все прокси хуевые");
             }
 
-            
+
         }
 
         public void get_timing_list()
@@ -956,7 +1043,7 @@ namespace Fuset
             sqlite_datareader = m_sqlCmd.ExecuteReader();
             sqlite_datareader.Read();
 
-            
+
 
             timing_list = new List<int>(sqlite_datareader.GetInt32(0));
             sqlite_datareader.Close();
@@ -966,7 +1053,7 @@ namespace Fuset
             m_sqlCmd.CommandType = CommandType.Text;
             SQLiteDataReader reader = m_sqlCmd.ExecuteReader();
 
-          
+
 
             while (reader.Read()) // построчно считываем данные
             {
@@ -993,7 +1080,7 @@ namespace Fuset
             string akk = sqlite_datareader.GetString(0);
             sqlite_datareader.Close();
 
-            
+
             return akk;
         }
 
@@ -1010,7 +1097,7 @@ namespace Fuset
 
             return pass;
         }
-        
+
         public string data_get_proxy(int id_prof)
         {
             if (id_prof == 777)
@@ -1066,7 +1153,7 @@ namespace Fuset
         public bool simple_captcha2(IWebDriver driver)
         {
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            
+
             try
             {
                 if (!IsElementVisible(driver.FindElement(By.Id("free_play_double_captchas"))) && IsElementVisible(driver.FindElement(By.Id("free_play_recaptcha"))))
@@ -1084,7 +1171,7 @@ namespace Fuset
 
                 return false;
             }
-            
+
             do
             {
                 try
@@ -1099,10 +1186,10 @@ namespace Fuset
                     continue;
                 }
             } while (true);//ожидание загрузки изображения капчи
-            
+
             while (!solve_text2(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]"))))
             {
-                
+
                 driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[2]/p[3]")).Click();
                 Thread.Sleep(1000);
 
@@ -1120,7 +1207,7 @@ namespace Fuset
                         continue;
                     }
                 } while (true);//ожидание загрузки изображения капчи
-                
+
 
             }
 
@@ -1128,7 +1215,7 @@ namespace Fuset
             {
                 driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[2]/p[3]/i")).Click();
                 Thread.Sleep(1000);
-                
+
                 do
                 {
                     try
@@ -1143,10 +1230,10 @@ namespace Fuset
                         continue;
                     }
                 } while (true);//ожидание загрузки изображения капчи
-                
+
 
             }
-            
+
             return true;
         }
 
@@ -1221,7 +1308,7 @@ namespace Fuset
 
                 if (dTable.Rows.Count > 0)
                 {
-                    
+
                 }
                 else
                     UpdateLog("Database is empty");
@@ -1231,13 +1318,13 @@ namespace Fuset
                 UpdateLog("Error: " + ex.Message);
             }
         }
-        
+
         public void UpdateLog(string s)
         {
             Action action = () =>
             {
                 richTextBox1.AppendText(s + "\n");
-                
+
             };
 
             Invoke(action);
@@ -1260,9 +1347,9 @@ namespace Fuset
         {
             Action action = () =>
             {
-                
+
                 richTextBox3.AppendText(s + "\n");
-                
+
             };
 
             Invoke(action);
@@ -1405,9 +1492,6 @@ namespace Fuset
                 {
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
 
-                    
-
-
                     driver.FindElement(By.PartialLinkText("REWARDS")).Click();
                     old_RP = Convert.ToInt32(FandS(driver, ".user_reward_points").Text.Replace(",", ""));
                     FandS(driver, "//*[@id='rewards_tab']/div[4]/div/div[6]/div[1]").Click();
@@ -1446,8 +1530,6 @@ namespace Fuset
                     //if (old_RP >= 4400) { UpdateLog2("Активируем бонус за 3200 на счету " + old_RP + "RP"); }
                 }
 
-                
-
                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].setAttribute('style','display');", driver.FindElement(By.CssSelector(".large-12.fixed")));
                 driver.FindElement(By.PartialLinkText("FREE BTC")).Click();
             }
@@ -1459,6 +1541,11 @@ namespace Fuset
             }
 
         }
+
+        public void bonus2(IWebDriver driver)
+        {
+        }
+
 
         public async void Step3(int i)
         {
@@ -1509,7 +1596,7 @@ namespace Fuset
                 }
                 catch (Exception)
                 {
-                    
+
                 }
 
                 try
@@ -1526,7 +1613,7 @@ namespace Fuset
                         timing_list[i] = 2000;
                     }
 
-                    
+
                     driver.Quit();
                     busy = false;
                     return;
@@ -1534,9 +1621,9 @@ namespace Fuset
                 catch (Exception)
                 {
                     UpdateLog2("(" + i + ")Кулдаун не обнаружен.");
-                    
+
                 }
-                
+
                 try
                 {
                     if (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))))
@@ -1547,7 +1634,7 @@ namespace Fuset
                         {
                             if (IsElementVisible(driver.FindElement(By.Id("play_without_captcha_container"))))
                             {
-                                
+
                             }
 
                         }
@@ -1568,8 +1655,8 @@ namespace Fuset
                     return;
                 }
 
-                
-                
+
+
 
                 try
                 {
@@ -1578,8 +1665,8 @@ namespace Fuset
                 }
                 catch (Exception)
                 {
-                    
-                    
+
+
                     UpdateLog2("(" + i + ")Текстовая капча недоступна " + i + " поставлена в очередь мультика.");
                     multiply3(i);
                     timing_list[i] = 1000;
@@ -1588,13 +1675,13 @@ namespace Fuset
                     return;
                 }
 
-                
+
 
                 do
                 {
                     if (simple_captcha2(driver))
                     {
-                        
+
                     }
                     else
                     {
@@ -1622,9 +1709,9 @@ namespace Fuset
                             timing_list[i] = 2000;
                         }
 
-                        
 
-                        
+
+
                         driver.Quit();
                         busy = false;
                         return;
@@ -1641,7 +1728,7 @@ namespace Fuset
                         {
                         }
                     }
-                    
+
 
 
                 } while (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))));
@@ -1651,7 +1738,7 @@ namespace Fuset
 
             UpdateLog2("(" + i + ")Stepped пуст.");
             stepped = 777;
-            
+
             try
             {
                 driver.Quit();
@@ -1662,12 +1749,12 @@ namespace Fuset
             {
             }
         }
-        
+
         public Form1()
         {
             InitializeComponent();
         }
-        
+
         private void Go_Click(object sender, EventArgs e)
         {
             if (Go.Text == "Паихали!")
@@ -1724,22 +1811,19 @@ namespace Fuset
             richTextBox1.Clear();
             richTextBox3.Clear();
             for (int i = 0; i < timing_list.Count; i++)
-                {
+            {
                 timing_list[i]--;
 
-                    if (timing_list[i] <= 0 && busy == false && multed != i)
-                    {
+                if (timing_list[i] <= 0 && busy == false && multed != i)
+                {
                     busy = true;
                     UpdateLog2("(" + i + ")Stepped = " + i);
                     stepped = i;
                     Step3(i);
-                    }
+                }
 
                 if (timing_list[i] <= -1000)
                 {
-                    KillChrome("chrome");
-                    KillChrome("chromedriver");
-                    screen();
                     this.Close();
                 }
             }
@@ -1757,7 +1841,7 @@ namespace Fuset
             }
             catch (Exception)
             {
-                
+
             }
 
             //if (multiply_list.Count != 0 && multiply_busy == false && stepped != multiply_list[0])
@@ -1797,7 +1881,7 @@ namespace Fuset
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Balance (id INTEGER PRIMARY KEY, satoshi INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Faucet_num (id INTEGER PRIMARY KEY, Date TEXT, Akk INTEGER, faucet INTEGER)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Faucet_num (id INTEGER PRIMARY KEY, faucet INTEGER)";
                 m_sqlCmd.ExecuteNonQuery();
 
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Cookie_setting (id INTEGER PRIMARY KEY, Cookie TEXT, csrf_token TEXT, u INTEGER, p TEXT)";
@@ -1806,11 +1890,11 @@ namespace Fuset
             }
             catch (SQLiteException ex)
             {
-                
+
                 MessageBox.Show("Error: " + ex.Message);
             }
 
-            
+
             if (File.Exists("Setting.txt"))
             {
                 StreamReader sr = new StreamReader(Application.StartupPath + @"\Setting.txt");
@@ -1819,7 +1903,7 @@ namespace Fuset
                 sr.Close();
             }
 
-            
+
             get_timing_list();
 
             if (Properties.Settings.Default.autostart)
@@ -1828,7 +1912,14 @@ namespace Fuset
                 timer1.Start();
                 Go.Text = "Стапэ!";
             }
-            
+
+            if (Properties.Settings.Default.bonus)
+            {
+                checkBox1.Checked = true;
+                checkBox2.Checked = true;
+
+            }
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -1836,39 +1927,22 @@ namespace Fuset
             int i = 0;
             foreach (var item in timing_list)
             {
-                options = new ChromeOptions();
-                Proxy proxy = new Proxy();
-                proxy.Kind = ProxyKind.Manual;
-                proxy.IsAutoDetect = false;
-                proxy.HttpProxy = data_get_proxy(i);
-                proxy.SslProxy = data_get_proxy(i);
-                options.Proxy = proxy;
-                options.AddArgument("ignore-certificate-errors");
 
-                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
-                options.AddArguments("--start-maximized");
-                driver = new ChromeDriver(options);
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-                driver.Navigate().GoToUrl("https://freebitco.in/");
-
-                write_faucet_num(driver, i);
-                write_balance(driver, i);
+                write_balance(i);
                 i++;
-                driver.Quit();
             }
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-            
+
             //DataGridUpdate();
         }
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            timing_list[0] = -1200;
-            
+
+            write_balance(9);
         }
 
 
@@ -1876,7 +1950,7 @@ namespace Fuset
         {
             DataGridUpdate1();
         }
-        
+
         private void форматСпискаПрофилейToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Setting_format Setting_format = new Setting_format();
@@ -1907,6 +1981,20 @@ namespace Fuset
             else
             {
                 Properties.Settings.Default.autostart = false;
+            }
+
+            Properties.Settings.Default.Save();
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox1.Checked)
+            {
+                Properties.Settings.Default.bonus = true;
+            }
+            else
+            {
+                Properties.Settings.Default.bonus = false;
             }
 
             Properties.Settings.Default.Save();
