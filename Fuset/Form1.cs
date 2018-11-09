@@ -45,6 +45,7 @@ namespace Fuset
         List<int> timing_list = new List<int>();
         List<int> multiply_list = new List<int>();
         List<double> multiply3_list = new List<double>();
+        List<int> enable_list = new List<int>();
         ChromeOptions options;
         public IWebDriver driver;
         public IWebDriver driver1;
@@ -1088,10 +1089,21 @@ namespace Fuset
             }
 
             reader.Close();
-
+            int i = 0;
             foreach (var item in timing_list)
             {
                 multiply3_list.Add(0);
+
+                m_sqlCmd = m_dbConn.CreateCommand();
+                m_sqlCmd.CommandText = "SELECT enable FROM Setting WHERE id = " + i;
+                sqlite_datareader = m_sqlCmd.ExecuteReader();
+                sqlite_datareader.Read();
+
+                enable_list.Add(sqlite_datareader.GetInt32(0));
+
+                
+                sqlite_datareader.Close();
+                i++;
             }
         }
 
@@ -1835,11 +1847,19 @@ namespace Fuset
         {
             richTextBox1.Clear();
             richTextBox3.Clear();
+
+
+
             for (int i = 0; i < timing_list.Count; i++)
             {
                 timing_list[i]--;
 
-                if (timing_list[i] <= 0 && busy == false && multed != i)
+                if (enable_list[i] == 0)
+                {
+                    timing_list[i] = 777;
+                }
+
+                if (enable_list[i] != 0 && timing_list[i] <= 0 && busy == false && multed != i)
                 {
                     busy = true;
                     UpdateLog2("(" + i + ")Stepped = " + i);
@@ -1900,7 +1920,7 @@ namespace Fuset
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Log (id INTEGER PRIMARY KEY , Date TEXT, Akk INTEGER, faucet INTEGER, RP INTEGER, BTC INTEGER)"; //AUTOINCREMENT
                 m_sqlCmd.ExecuteNonQuery();
 
-                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Setting (id INTEGER PRIMARY KEY , akk TEXT, prof TEXT, pass TEXT, proxy TEXT)";
+                m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Setting (id INTEGER PRIMARY KEY , akk TEXT, prof TEXT, pass TEXT, proxy TEXT, enable TEXT)";
                 m_sqlCmd.ExecuteNonQuery();
 
                 m_sqlCmd.CommandText = "CREATE TABLE IF NOT EXISTS Proxy_list (id INTEGER PRIMARY KEY, proxy TEXT, usage BOOL)";
@@ -1969,10 +1989,12 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            timing_list[0] = -1200;
+            foreach (var item in enable_list)
+            {
+                UpdateLog2(Convert.ToString(item));
+            }
         }
-
-
+        
         private void button7_Click(object sender, EventArgs e)//обновление
         {
             DataGridUpdate1();
