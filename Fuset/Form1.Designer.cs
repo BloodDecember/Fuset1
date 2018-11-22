@@ -55,6 +55,7 @@
             this.label3 = new System.Windows.Forms.Label();
             this.richTextBox3 = new System.Windows.Forms.RichTextBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+            this.checkBox5 = new System.Windows.Forms.CheckBox();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -113,7 +114,7 @@
             // checkBox1
             // 
             this.checkBox1.AutoSize = true;
-            this.checkBox1.Location = new System.Drawing.Point(106, 171);
+            this.checkBox1.Location = new System.Drawing.Point(105, 184);
             this.checkBox1.Name = "checkBox1";
             this.checkBox1.Size = new System.Drawing.Size(130, 17);
             this.checkBox1.TabIndex = 13;
@@ -124,7 +125,7 @@
             // checkBox2
             // 
             this.checkBox2.AutoSize = true;
-            this.checkBox2.Location = new System.Drawing.Point(106, 194);
+            this.checkBox2.Location = new System.Drawing.Point(106, 207);
             this.checkBox2.Name = "checkBox2";
             this.checkBox2.Size = new System.Drawing.Size(136, 17);
             this.checkBox2.TabIndex = 14;
@@ -151,7 +152,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(138, 215);
+            this.label1.Location = new System.Drawing.Point(90, 300);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(76, 13);
             this.label1.TabIndex = 17;
@@ -290,11 +291,22 @@
             this.statusStrip1.TabIndex = 39;
             this.statusStrip1.Text = "statusStrip1";
             // 
+            // checkBox5
+            // 
+            this.checkBox5.AutoSize = true;
+            this.checkBox5.Location = new System.Drawing.Point(106, 230);
+            this.checkBox5.Name = "checkBox5";
+            this.checkBox5.Size = new System.Drawing.Size(149, 17);
+            this.checkBox5.TabIndex = 40;
+            this.checkBox5.Text = "Новый алгоритм бонуса";
+            this.checkBox5.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(501, 498);
+            this.Controls.Add(this.checkBox5);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.richTextBox3);
             this.Controls.Add(this.label3);
@@ -360,6 +372,7 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.RichTextBox richTextBox3;
         private System.Windows.Forms.StatusStrip statusStrip1;
+        private System.Windows.Forms.CheckBox checkBox5;
     }
 }
 
