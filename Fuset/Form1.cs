@@ -894,7 +894,7 @@ namespace Fuset
 
             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", field);
             field.SendKeys(solve);
-
+            Thread.Sleep(500);
             return true;
         }
 
@@ -1579,10 +1579,162 @@ namespace Fuset
 
         }
 
-        public void bonus2(IWebDriver driver)
+        public void bonus2(int i)
         {
-        }
+            if (!checkBox1.Checked)
+            {
+                return;
+            }
 
+            SQLiteCommand Command;//m_sqlCmd
+            SQLiteDataReader Reader;//sqlite_datareader
+            string[] result;
+            int RP = 11111111;
+            int bonus_RP = 11111111;
+            int bonus_BTC = 11111111;
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string Cookie = Reader.GetString(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string csrf_token = Reader.GetString(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            int u = Reader.GetInt32(0);
+            Reader.Close();
+
+            Command = m_dbConn.CreateCommand();
+            Command.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
+            Reader = Command.ExecuteReader();
+            Reader.Read();
+            string p = Reader.GetString(0);
+            Reader.Close();
+
+
+
+            var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                httpRequestMessage.Headers.Add("Accept", "*/*");
+                httpRequestMessage.Headers.Add("x-csrf-token", csrf_token);
+                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36");
+                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                Thread.Sleep(100);
+            }
+
+                for (int x = 0; x < result.Length + 1; x++)
+                {
+                    if (result[x] == "reward_points")
+                    {
+                        RP = Convert.ToInt32(result[x + 2]);
+                        break;
+                    }
+                }
+                
+                UpdateLog2("чистое рп - " + RP.ToString());
+
+                if (RP >= 12 && RP < 120)
+                    bonus_RP = 1;
+                if (RP >= 120 && RP < 300)
+                    bonus_RP = 10;
+                if (RP >= 300 && RP < 600)
+                    bonus_RP = 25;
+                if (RP >= 600 && RP < 1200)
+                    bonus_RP = 50;
+                if (RP >= 1200)
+                    bonus_RP = 100;
+
+            if (bonus_RP == 11111111)
+                return;
+
+                RP -= 2400;
+
+                UpdateLog2("рп за минусом 1200 - " + RP.ToString());
+                UpdateLog2("активированный бонус на - " + bonus_RP.ToString());
+
+                if (RP >= 320 && RP < 1600)
+                    bonus_BTC = 100;
+                if (RP >= 1600 && RP < 3200)
+                    bonus_BTC = 500;
+                if (RP >= 3200)
+                    bonus_BTC = 1000;
+
+            UpdateLog2("бонус БТС - " + bonus_BTC.ToString());
+
+
+
+
+            baseAddress = new Uri("https://freebitco.in/?op=redeem_rewards&id=free_points_" + bonus_RP + "&points=&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                httpRequestMessage.Headers.Add("Accept", "*/*");
+                httpRequestMessage.Headers.Add("x-csrf-token", csrf_token);
+                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36");
+                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                Thread.Sleep(100);
+            }
+
+            UpdateLog2(result[0]);
+
+            if (bonus_BTC == 11111111)
+                return;
+
+
+
+            baseAddress = new Uri("https://freebitco.in/?op=redeem_rewards&id=fp_bonus_" + bonus_BTC + "&points=&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                httpRequestMessage.Headers.Add("Accept", "*/*");
+                httpRequestMessage.Headers.Add("x-csrf-token", csrf_token);
+                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36");
+                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                Thread.Sleep(100);
+            }
+        }
 
         public async void Step3(int i)
         {
@@ -1727,8 +1879,13 @@ namespace Fuset
                         break;
                     }
 
-                    if (checkBox1.Checked || checkBox2.Checked)
+                    if (checkBox1.Checked && !checkBox5.Checked)
                         bonus(driver);
+
+                    if (checkBox1.Checked && checkBox5.Checked)
+                        bonus2(i);
+
+
                     Thread.Sleep(1000);
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
 
@@ -1905,6 +2062,8 @@ namespace Fuset
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            textBox5.Text = "0";
+
             m_dbConn = new SQLiteConnection();
             m_sqlCmd = new SQLiteCommand();
 
@@ -1989,10 +2148,7 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            foreach (var item in enable_list)
-            {
-                UpdateLog2(Convert.ToString(item));
-            }
+            bonus2(Convert.ToInt32(textBox5.Text));
         }
         
         private void button7_Click(object sender, EventArgs e)//обновление
@@ -2048,6 +2204,22 @@ namespace Fuset
             }
 
             Properties.Settings.Default.Save();
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            if (Convert.ToInt32(textBox5.Text) > 0)
+            {
+                textBox5.Text = Convert.ToString(Convert.ToInt32(textBox5.Text) - 1);
+            }
+        }
+
+        private void button9_Click(object sender, EventArgs e)
+        {
+            if (Convert.ToInt32(textBox5.Text) < timing_list.Count)
+            {
+                textBox5.Text = Convert.ToString(Convert.ToInt32(textBox5.Text) + 1);
+            }
         }
     }
 }

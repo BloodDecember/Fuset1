@@ -55,6 +55,9 @@
             this.label3 = new System.Windows.Forms.Label();
             this.richTextBox3 = new System.Windows.Forms.RichTextBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+            this.checkBox5 = new System.Windows.Forms.CheckBox();
+            this.button8 = new System.Windows.Forms.Button();
+            this.button9 = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -78,7 +81,7 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(106, 84);
+            this.button2.Location = new System.Drawing.Point(106, 97);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(108, 23);
             this.button2.TabIndex = 4;
@@ -113,7 +116,7 @@
             // checkBox1
             // 
             this.checkBox1.AutoSize = true;
-            this.checkBox1.Location = new System.Drawing.Point(106, 171);
+            this.checkBox1.Location = new System.Drawing.Point(105, 184);
             this.checkBox1.Name = "checkBox1";
             this.checkBox1.Size = new System.Drawing.Size(130, 17);
             this.checkBox1.TabIndex = 13;
@@ -124,7 +127,7 @@
             // checkBox2
             // 
             this.checkBox2.AutoSize = true;
-            this.checkBox2.Location = new System.Drawing.Point(106, 194);
+            this.checkBox2.Location = new System.Drawing.Point(106, 207);
             this.checkBox2.Name = "checkBox2";
             this.checkBox2.Size = new System.Drawing.Size(136, 17);
             this.checkBox2.TabIndex = 14;
@@ -133,7 +136,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(106, 113);
+            this.button1.Location = new System.Drawing.Point(106, 126);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(108, 23);
             this.button1.TabIndex = 15;
@@ -151,7 +154,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(138, 215);
+            this.label1.Location = new System.Drawing.Point(90, 300);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(76, 13);
             this.label1.TabIndex = 17;
@@ -173,20 +176,20 @@
             this.менюToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.форматСпискаПрофилейToolStripMenuItem});
             this.менюToolStripMenuItem.Name = "менюToolStripMenuItem";
-            this.менюToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
+            this.менюToolStripMenuItem.Size = new System.Drawing.Size(53, 20);
             this.менюToolStripMenuItem.Text = "Меню";
             // 
             // форматСпискаПрофилейToolStripMenuItem
             // 
             this.форматСпискаПрофилейToolStripMenuItem.Name = "форматСпискаПрофилейToolStripMenuItem";
-            this.форматСпискаПрофилейToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
+            this.форматСпискаПрофилейToolStripMenuItem.Size = new System.Drawing.Size(218, 22);
             this.форматСпискаПрофилейToolStripMenuItem.Text = "Формат списка профилей";
             this.форматСпискаПрофилейToolStripMenuItem.Click += new System.EventHandler(this.форматСпискаПрофилейToolStripMenuItem_Click);
             // 
             // настройкиToolStripMenuItem
             // 
             this.настройкиToolStripMenuItem.Name = "настройкиToolStripMenuItem";
-            this.настройкиToolStripMenuItem.Size = new System.Drawing.Size(73, 20);
+            this.настройкиToolStripMenuItem.Size = new System.Drawing.Size(79, 20);
             this.настройкиToolStripMenuItem.Text = "Настройки";
             // 
             // button4
@@ -201,9 +204,9 @@
             // 
             // textBox5
             // 
-            this.textBox5.Location = new System.Drawing.Point(106, 58);
+            this.textBox5.Location = new System.Drawing.Point(142, 69);
             this.textBox5.Name = "textBox5";
-            this.textBox5.Size = new System.Drawing.Size(42, 20);
+            this.textBox5.Size = new System.Drawing.Size(36, 20);
             this.textBox5.TabIndex = 28;
             this.textBox5.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
@@ -237,7 +240,7 @@
             // 
             // button5
             // 
-            this.button5.Location = new System.Drawing.Point(106, 142);
+            this.button5.Location = new System.Drawing.Point(106, 155);
             this.button5.Name = "button5";
             this.button5.Size = new System.Drawing.Size(108, 23);
             this.button5.TabIndex = 34;
@@ -290,11 +293,44 @@
             this.statusStrip1.TabIndex = 39;
             this.statusStrip1.Text = "statusStrip1";
             // 
+            // checkBox5
+            // 
+            this.checkBox5.AutoSize = true;
+            this.checkBox5.Location = new System.Drawing.Point(106, 230);
+            this.checkBox5.Name = "checkBox5";
+            this.checkBox5.Size = new System.Drawing.Size(149, 17);
+            this.checkBox5.TabIndex = 40;
+            this.checkBox5.Text = "Новый алгоритм бонуса";
+            this.checkBox5.UseVisualStyleBackColor = true;
+            // 
+            // button8
+            // 
+            this.button8.Location = new System.Drawing.Point(106, 68);
+            this.button8.Name = "button8";
+            this.button8.Size = new System.Drawing.Size(30, 23);
+            this.button8.TabIndex = 41;
+            this.button8.Text = "<";
+            this.button8.UseVisualStyleBackColor = true;
+            this.button8.Click += new System.EventHandler(this.button8_Click);
+            // 
+            // button9
+            // 
+            this.button9.Location = new System.Drawing.Point(184, 67);
+            this.button9.Name = "button9";
+            this.button9.Size = new System.Drawing.Size(30, 23);
+            this.button9.TabIndex = 42;
+            this.button9.Text = ">";
+            this.button9.UseVisualStyleBackColor = true;
+            this.button9.Click += new System.EventHandler(this.button9_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(501, 498);
+            this.Controls.Add(this.button9);
+            this.Controls.Add(this.button8);
+            this.Controls.Add(this.checkBox5);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.richTextBox3);
             this.Controls.Add(this.label3);
@@ -360,6 +396,9 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.RichTextBox richTextBox3;
         private System.Windows.Forms.StatusStrip statusStrip1;
+        private System.Windows.Forms.CheckBox checkBox5;
+        private System.Windows.Forms.Button button8;
+        private System.Windows.Forms.Button button9;
     }
 }
 
