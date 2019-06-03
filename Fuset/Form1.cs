@@ -172,9 +172,18 @@ namespace Fuset
                 result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
                 Thread.Sleep(100);
 
+                for (int z = 0; z < result.Length; z++)
+                {
+                    if (result[z] == "balance")
+                    {
+                        UpdateLog2(result[z+1].ToString());
+                        break;
+                    }
+                }
 
-                balance = Convert.ToInt32(result[result.Length - 19].Substring(1, result[result.Length - 19].Length - 3));
-                UpdateLog2(balance.ToString());
+                return;
+                //balance = Convert.ToInt32(result[result.Length - 19].Substring(1, result[result.Length - 19].Length - 3));
+                //UpdateLog2(balance.ToString());
             }
 
             baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats_initial&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
