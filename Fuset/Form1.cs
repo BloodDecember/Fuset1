@@ -176,14 +176,33 @@ namespace Fuset
                 {
                     if (result[z] == "balance")
                     {
-                        UpdateLog2(result[z+1].ToString());
+                        balance = Convert.ToInt32(result[z + 1].ToString().Substring(1, result[z + 1].Length - 3));
+                        UpdateLog2(balance.ToString());
+
+                        m_sqlCmd = m_dbConn.CreateCommand();
+                        m_sqlCmd.CommandText = "SELECT id FROM Balance WHERE id ='" + i + "'";
+                        try
+                        {
+                            sqlite_datareader = m_sqlCmd.ExecuteReader();
+                            sqlite_datareader.Read();
+                            sqlite_datareader.GetInt32(0);
+                            sqlite_datareader.Close();
+                            m_sqlCmd.CommandText = "update Balance set satoshi = " + balance + " where ID = " + i;
+                            m_sqlCmd.ExecuteNonQuery();
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            sqlite_datareader.Close();
+                            m_sqlCmd.CommandText = "INSERT INTO Balance ('id', 'satoshi') values ('" + i + "', '" + balance + "' )";
+
+                            m_sqlCmd.ExecuteNonQuery();
+                        }
+
                         break;
                     }
                 }
 
-                return;
-                //balance = Convert.ToInt32(result[result.Length - 19].Substring(1, result[result.Length - 19].Length - 3));
-                //UpdateLog2(balance.ToString());
+
             }
 
             baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats_initial&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
@@ -206,48 +225,35 @@ namespace Fuset
                 result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
                 Thread.Sleep(100);
 
+                for (int z = 0; z < result.Length; z++)
+                {
+                    if (result[z] == "free_spins_played")
+                    {
+                        free_spins_played = Convert.ToInt32(result[z + 1].ToString().Substring(1, result[z + 1].Length - 2));
+                        UpdateLog2(free_spins_played.ToString());
 
-                free_spins_played = Convert.ToInt32(result[result.Length - 21].Substring(1, result[result.Length - 21].Length - 2));
-                UpdateLog2(Convert.ToString(free_spins_played));
-            }
+                        m_sqlCmd = m_dbConn.CreateCommand();
+                        m_sqlCmd.CommandText = "SELECT id FROM Faucet_num WHERE id ='" + i + "'";
+                        try
+                        {
+                            sqlite_datareader = m_sqlCmd.ExecuteReader();
+                            sqlite_datareader.Read();
+                            sqlite_datareader.GetInt32(0);
+                            sqlite_datareader.Close();
+                            m_sqlCmd.CommandText = "update Faucet_num set faucet = " + free_spins_played + " where ID = " + i;
+                            m_sqlCmd.ExecuteNonQuery();
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            sqlite_datareader.Close();
+                            m_sqlCmd.CommandText = "INSERT INTO Faucet_num (id, faucet) values ('" + i + "', '" + free_spins_played + "' )";
 
+                            m_sqlCmd.ExecuteNonQuery();
+                        }
+                        break;
+                    }
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT id FROM Balance WHERE id ='" + i + "'";
-            try
-            {
-                sqlite_datareader = m_sqlCmd.ExecuteReader();
-                sqlite_datareader.Read();
-                sqlite_datareader.GetInt32(0);
-                sqlite_datareader.Close();
-                m_sqlCmd.CommandText = "update Balance set satoshi = " + balance + " where ID = " + i;
-                m_sqlCmd.ExecuteNonQuery();
-            }
-            catch (InvalidOperationException)
-            {
-                sqlite_datareader.Close();
-                m_sqlCmd.CommandText = "INSERT INTO Balance ('id', 'satoshi') values ('" + i + "', '" + balance + "' )";
-
-                m_sqlCmd.ExecuteNonQuery();
-            }
-
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT id FROM Faucet_num WHERE id ='" + i + "'";
-            try
-            {
-                sqlite_datareader = m_sqlCmd.ExecuteReader();
-                sqlite_datareader.Read();
-                sqlite_datareader.GetInt32(0);
-                sqlite_datareader.Close();
-                m_sqlCmd.CommandText = "update Faucet_num set faucet = " + free_spins_played + " where ID = " + i;
-                m_sqlCmd.ExecuteNonQuery();
-            }
-            catch (InvalidOperationException)
-            {
-                sqlite_datareader.Close();
-                m_sqlCmd.CommandText = "INSERT INTO Faucet_num (id, faucet) values ('" + i + "', '" + free_spins_played + "' )";
-
-                m_sqlCmd.ExecuteNonQuery();
+                }
             }
         }
 
@@ -725,7 +731,7 @@ namespace Fuset
 
         }
 
-        static string Bet(string Cookie, string csrf_token, string bet)
+        string Bet(string Cookie, string csrf_token, string bet)
         {
             Random random = new Random();
             string[] result;
@@ -753,7 +759,19 @@ namespace Fuset
 
                 result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { ':' });
                 Thread.Sleep(100);
-                return result[1];
+                //UpdateLog2(result[1].ToString());
+                try
+                {
+                    return result[1];
+                }
+                catch (Exception)
+                {
+                    foreach (var item in result)
+                    {
+                        UpdateLog2(item.ToString());
+                    }
+                    return "w";
+                }
             }
         }
 
@@ -1750,7 +1768,6 @@ namespace Fuset
             await Task.Run(() =>
             {
                 multiply3(i);
-
                 options = new ChromeOptions();
                 Proxy proxy = new Proxy();
                 proxy.Kind = ProxyKind.Manual;
@@ -1888,10 +1905,10 @@ namespace Fuset
                         break;
                     }
 
-                    if (checkBox1.Checked && !checkBox5.Checked)
-                        bonus(driver);
+                    //if (checkBox1.Checked && !checkBox5.Checked)
+                    //    bonus(driver);
 
-                    if (checkBox1.Checked && checkBox5.Checked)
+                    if (checkBox1.Checked)
                         bonus2(i);
 
 
@@ -2120,6 +2137,8 @@ namespace Fuset
 
             get_timing_list();
 
+
+
             if (Properties.Settings.Default.autostart)
             {
                 checkBox4.Checked = true;
@@ -2155,7 +2174,9 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            bonus2(Convert.ToInt32(textBox5.Text));
+            multiply3(12);
+
+
         }
         
         private void button7_Click(object sender, EventArgs e)//обновление
@@ -2211,6 +2232,22 @@ namespace Fuset
             }
 
             Properties.Settings.Default.Save();
+        }
+
+        private void Button9_Click(object sender, EventArgs e)
+        {
+            if (Convert.ToInt32(textBox5.Text) > 0 && Convert.ToInt32(textBox5.Text) < timing_list.Count())
+            {
+                textBox5.Text = (Convert.ToInt32(textBox5.Text) - 1).ToString();
+            }
+        }
+
+        private void Button8_Click(object sender, EventArgs e)
+        {
+            if (Convert.ToInt32(textBox5.Text) >= 0 && Convert.ToInt32(textBox5.Text) < (timing_list.Count() - 1))
+            {
+                textBox5.Text = (Convert.ToInt32(textBox5.Text) + 1).ToString();
+            }
         }
     }
 }
