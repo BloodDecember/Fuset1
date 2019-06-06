@@ -153,7 +153,7 @@ namespace Fuset
 
 
             var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
-            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(data_get_proxy(i)) })
             using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
             {
                 var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
@@ -206,7 +206,7 @@ namespace Fuset
             }
 
             baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats_initial&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
-            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(data_get_proxy(i)) })
             using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
             {
                 var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
@@ -497,7 +497,7 @@ namespace Fuset
 
 
             var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
-            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(data_get_proxy(i)) })
             using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
             {
                 var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
@@ -731,7 +731,7 @@ namespace Fuset
 
         }
 
-        string Bet(string Cookie, string csrf_token, string bet)
+        string Bet(string Cookie, string csrf_token, string bet, string proxy)
         {
             Random random = new Random();
             string[] result;
@@ -741,7 +741,7 @@ namespace Fuset
             rand = new string(Enumerable.Repeat(rand, 17).Select(s => s[random.Next(s.Length)]).ToArray());
 
             var baseAddress = new Uri("https://freebitco.in/cgi-bin/bet.pl?m=hi&client_seed=" + chars + "&jackpot=0&stake=" + bet.Replace(",", ".") + "&multiplier=2.00&rand=0." + rand + "&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
-            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(proxy) }) //, UseProxy = true, Proxy = new WebProxy(proxy) 
             using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
             {
                 var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
@@ -792,6 +792,13 @@ namespace Fuset
             string csrf_token = sqlite_datareader.GetString(0);
             sqlite_datareader.Close();
 
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT proxy FROM Setting WHERE id = " + i;
+            sqlite_datareader = m_sqlCmd.ExecuteReader();
+            sqlite_datareader.Read();
+            string proxy = sqlite_datareader.GetString(0);
+            sqlite_datareader.Close();
+
             await Task.Run(() =>
             {
                 if (multiply_list.Contains(i))
@@ -826,7 +833,7 @@ namespace Fuset
 
                 do
                 {
-                    sing = Bet(Cookie, csrf_token, bet.ToString("F8"));
+                    sing = Bet(Cookie, csrf_token, bet.ToString("F8"), proxy);
                     //UpdateLog3("(" + i + ")" + bet.ToString("F8") + "_" + luz_num + sing + "_" + wager.ToString("F8"));
 
                     multiply3_list[i] = wager;
@@ -856,7 +863,7 @@ namespace Fuset
             });
         }
 
-        public bool solve_text2(IWebDriver driver, IWebElement image, IWebElement field)
+        public bool solve_text2(int i, IWebDriver driver, IWebElement image, IWebElement field)
         {
             Uri imageURL = new Uri(image.GetAttribute("src"));
 
@@ -865,6 +872,8 @@ namespace Fuset
             string localFilename = Application.StartupPath + @"\captcha_images2\12.jpg";
             using (WebClient client = new WebClient())
             {
+                WebProxy wp = new WebProxy(data_get_proxy(Convert.ToInt32(i)));
+                client.Proxy = wp;
                 client.DownloadFile(url, localFilename);
             }
 
@@ -1214,7 +1223,7 @@ namespace Fuset
             return prof;
         }
 
-        public bool simple_captcha2(IWebDriver driver)
+        public bool simple_captcha2(IWebDriver driver, int i)
         {
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
 
@@ -1251,7 +1260,7 @@ namespace Fuset
                 }
             } while (true);//ожидание загрузки изображения капчи
 
-            while (!solve_text2(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]"))))
+            while (!solve_text2(i, driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]"))))
             {
 
                 driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[2]/p[3]")).Click();
@@ -1275,7 +1284,7 @@ namespace Fuset
 
             }
 
-            while (!solve_text2(driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/input[2]"))))
+            while (!solve_text2(i, driver, driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[1]/img")), driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/input[2]"))))
             {
                 driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha2']/div[2]/p[3]/i")).Click();
                 Thread.Sleep(1000);
@@ -1651,7 +1660,7 @@ namespace Fuset
 
 
             var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
-            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(data_get_proxy(i)) })
             using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
             {
                 var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
@@ -1714,7 +1723,7 @@ namespace Fuset
 
 
             baseAddress = new Uri("https://freebitco.in/?op=redeem_rewards&id=free_points_" + bonus_RP + "&points=&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
-            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(data_get_proxy(i)) })
             using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
             {
                 var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
@@ -1742,7 +1751,7 @@ namespace Fuset
 
 
             baseAddress = new Uri("https://freebitco.in/?op=redeem_rewards&id=fp_bonus_" + bonus_BTC + "&points=&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
-            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(data_get_proxy(i)) })
             using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
             {
                 var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
@@ -1818,8 +1827,8 @@ namespace Fuset
                 {
                     UpdateLog2("(" + i + ")Поиск кулдауна...");
                     wait.Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
-                    Thread.Sleep(1000);
-                    timing_list[i] = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 10;
+                    //Thread.Sleep(1000);
+                    timing_list[i] = Convert.ToInt32(driver.FindElement(By.Id("time_remaining")).Text.Split(new char[] { '\r' })[0]) * 60 + 10;
                     UpdateLog2(timing_list[i] + "");
 
                     if (timing_list[i] > 2000)
@@ -1832,14 +1841,14 @@ namespace Fuset
                     driver.Quit();
                     busy = false;
                     return;
-                }
-                catch (Exception)
-                {
-                    UpdateLog2("(" + i + ")Кулдаун не обнаружен.");
+            }
+                catch (Exception ex)
+            {
+                UpdateLog2("(" + i + ")Кулдаун не обнаружен." + ex);
 
-                }
+            }
 
-                try
+            try
                 {
                     if (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))))
                     {
@@ -1894,7 +1903,7 @@ namespace Fuset
 
                 do
                 {
-                    if (simple_captcha2(driver))
+                    if (simple_captcha2(driver, i))
                     {
 
                     }
@@ -1919,18 +1928,17 @@ namespace Fuset
 
                     try
                     {
-                        wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".countdown_amount")));
+
+                        wait.Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
                         //Thread.Sleep(1000);
-                        timing_list[i] = Convert.ToInt32(driver.FindElement(By.CssSelector(".countdown_amount")).Text) * 60 + 10;
+                        timing_list[i] = Convert.ToInt32(driver.FindElement(By.Id("time_remaining")).Text.Split(new char[] { '\r' })[0]) * 60 + 10;
+
 
                         if (timing_list[i] > 2000)
                         {
                             UpdateLog2("(" + i + ")Кулдаун заменен с " + timing_list[i] + " на 2000.");
                             timing_list[i] = 2000;
                         }
-
-
-
 
                         driver.Quit();
                         busy = false;
@@ -2174,9 +2182,70 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            multiply3(12);
+            if (textBox5.Text.Length == 0)
+            {
+                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
+                return;
+            }
 
 
+            options = new ChromeOptions();
+            Proxy proxy = new Proxy();
+            proxy.Kind = ProxyKind.Manual;
+            proxy.IsAutoDetect = false;
+            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
+            options.Proxy = proxy;
+            options.AddArgument("ignore-certificate-errors");
+
+            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
+            options.AddArguments("--start-maximized");
+            driver = new ChromeDriver(options);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
+            driver.Navigate().GoToUrl("https://freebitco.in/");
+
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+            try
+            {
+                if (!IsElementVisible(driver.FindElement(By.Id("free_play_double_captchas"))) && IsElementVisible(driver.FindElement(By.Id("free_play_recaptcha"))))
+                {
+                    driver.FindElement(By.Id("switch_captchas_button")).Click();
+                }
+
+                wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")));
+
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")));
+
+            }
+            catch (Exception)
+            {
+
+                
+            }
+
+            IWebElement logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
+            string logoSRC = logo.GetAttribute("src");
+
+            UpdateLog2(logoSRC);
+
+
+            string localFilename = Application.StartupPath + @"\captcha_images2\test.jpg";
+
+            using (WebClient client = new WebClient())
+            {
+                WebProxy wp = new WebProxy(data_get_proxy(Convert.ToInt32(textBox5.Text)));
+                client.Proxy = wp;
+                client.DownloadFile(logoSRC, localFilename);
+            }
+            
+            
+
+            //Uri imageURL = new Uri(logoSRC);
+            //BufferedImage saveImage = ImageIO.read(imageURL);
+
+            //Image.write(saveImage, "png", new File("logo-image.png"));
         }
         
         private void button7_Click(object sender, EventArgs e)//обновление
