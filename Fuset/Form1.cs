@@ -2076,6 +2076,28 @@ namespace Fuset
             }
         }
 
+            baseAddress = new Uri("https://freebitco.in/?op=redeem_rewards&id=fp_bonus_" + bonus_BTC + "&points=&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
+            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                httpRequestMessage.Headers.Add("Accept", "*/*");
+                httpRequestMessage.Headers.Add("x-csrf-token", csrf_token);
+                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36");
+                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                Thread.Sleep(100);
+            }
+        }
+
         public async void Step3(int i)
         {
             await Task.Run(() =>
