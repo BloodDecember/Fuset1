@@ -1028,7 +1028,7 @@ namespace Fuset
                     httpRequestMessage.Headers.Add("Host", "freebitco.in");
                     httpRequestMessage.Headers.Add("Connection", "keep-alive");
                     httpRequestMessage.Headers.Add("Accept", "*/*");
-                    httpRequestMessage.Headers.Add("x-csrf-token", csrf_token);
+                    httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
                     httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
                     httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
                     httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
