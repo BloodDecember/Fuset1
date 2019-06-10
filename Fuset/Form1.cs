@@ -21,12 +21,22 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Remote;
 using OpenQA.Selenium.Support.UI;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Sheets.v4;
+using Google.Apis.Sheets.v4.Data;
+using Google.Apis.Services;
+using Google.Apis.Util.Store;
+using Newtonsoft.Json;
+
+
 
 namespace Fuset
 {
 
     public partial class Form1 : Form
     {
+
+
         string PuthToPicture;
         int old_RP = 0;
         int spred_BTC = 0;
@@ -50,13 +60,274 @@ namespace Fuset
         public IWebDriver driver;
         public IWebDriver driver1;
 
-
+        static string[] Scopes = { SheetsService.Scope.Spreadsheets };
+        static string ApplicationName = "Fuset1";
+        UserCredential credential;
+        string spreadsheetId2 = "1xFHgjLLInDenc3g1UpydfGET6nViTcsgu0v7Rr8fl7k";
 
 
         private String dbFileName = "sample.sqlite";
         private SQLiteConnection m_dbConn;
         private SQLiteCommand m_sqlCmd;
         SQLiteDataReader sqlite_datareader;
+
+
+        public char spreed_read()
+        {
+            char column = 'A';
+            string Date = DateTime.Today.ToString();
+            Date = Date.Substring(0, Date.Length - 13);
+
+            using (var stream =
+                new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
+            {
+                string credPath = System.Environment.GetFolderPath(
+                    System.Environment.SpecialFolder.Personal);
+
+
+                credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    GoogleClientSecrets.Load(stream).Secrets,
+                    Scopes,
+                    "user",
+                    CancellationToken.None,
+                    new FileDataStore(credPath, true)).Result;
+            }
+
+            // Create Google Sheets API service.
+            var service = new SheetsService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName,
+            });
+
+            String range2 = "Лист1!1:1";
+            SpreadsheetsResource.ValuesResource.GetRequest request =
+                    service.Spreadsheets.Values.Get(spreadsheetId2, range2);
+
+            ValueRange response = request.Execute();
+            IList<IList<Object>> values = response.Values;
+
+            if (values == null)
+            {
+                spreed_write(Date, column + "1");
+                return column;
+            }
+            else
+            {
+                foreach (var item in values[0])
+                {
+                    if (item.ToString() == Date)
+                    {
+                        spreed_write(Date, column + "1");
+                        return column;
+                    }
+                    else
+                    {
+                        column++;
+                    }
+                }
+            }
+            spreed_write(Date, column + "1");
+            return column;
+        }
+
+        public void spreed_write(int data, string cell)
+        {
+            using (var stream =
+                new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
+            {
+                string credPath = System.Environment.GetFolderPath(
+                    System.Environment.SpecialFolder.Personal);
+
+
+                credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    GoogleClientSecrets.Load(stream).Secrets,
+                    Scopes,
+                    "user",
+                    CancellationToken.None,
+                    new FileDataStore(credPath, true)).Result;
+            }
+
+            // Create Google Sheets API service.
+            var service = new SheetsService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName,
+            });
+
+
+            String range2 = "Лист1!" + cell;  // update cell F5 
+            ValueRange valueRange = new ValueRange();
+            valueRange.MajorDimension = "COLUMNS";//"ROWS";//COLUMNS
+
+            var oblist = new List<object>() { data };
+            valueRange.Values = new List<IList<object>> { oblist };
+
+            SpreadsheetsResource.ValuesResource.UpdateRequest update = service.Spreadsheets.Values.Update(valueRange, spreadsheetId2, range2);
+            update.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+            UpdateValuesResponse result2 = update.Execute();
+        }
+
+        public void spreed_write(string data, string cell)
+        {
+            using (var stream =
+                new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
+            {
+                string credPath = System.Environment.GetFolderPath(
+                    System.Environment.SpecialFolder.Personal);
+
+
+                credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    GoogleClientSecrets.Load(stream).Secrets,
+                    Scopes,
+                    "user",
+                    CancellationToken.None,
+                    new FileDataStore(credPath, true)).Result;
+            }
+
+            // Create Google Sheets API service.
+            var service = new SheetsService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName,
+            });
+
+
+            String range2 = "Лист1!" + cell;  // update cell F5 
+            ValueRange valueRange = new ValueRange();
+            valueRange.MajorDimension = "COLUMNS";//"ROWS";//COLUMNS
+
+            var oblist = new List<object>() { data };
+            valueRange.Values = new List<IList<object>> { oblist };
+
+            SpreadsheetsResource.ValuesResource.UpdateRequest update = service.Spreadsheets.Values.Update(valueRange, spreadsheetId2, range2);
+            update.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+            UpdateValuesResponse result2 = update.Execute();
+        }
+
+        public async void spreed_write_balance(int i)
+        {
+            await Task.Run(() =>
+            {
+                string balance;
+                string free_spins_played;
+                string[] result;
+
+                try
+                {
+
+
+                    SQLiteCommand Command;//m_sqlCmd
+                    SQLiteDataReader Reader;//sqlite_datareader
+
+
+                    Command = m_dbConn.CreateCommand();
+                    Command.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+                    Reader = Command.ExecuteReader();
+                    Reader.Read();
+                    string Cookie = Reader.GetString(0);
+                    Reader.Close();
+
+                    Command = m_dbConn.CreateCommand();
+                    Command.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+                    Reader = Command.ExecuteReader();
+                    Reader.Read();
+                    string csrf_token = Reader.GetString(0);
+                    Reader.Close();
+
+                    Command = m_dbConn.CreateCommand();
+                    Command.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
+                    Reader = Command.ExecuteReader();
+                    Reader.Read();
+                    int u = Reader.GetInt32(0);
+                    Reader.Close();
+
+                    Command = m_dbConn.CreateCommand();
+                    Command.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
+                    Reader = Command.ExecuteReader();
+                    Reader.Read();
+                    string p = Reader.GetString(0);
+                    Reader.Close();
+
+
+                    var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+                    using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(data_get_proxy(i)) })
+                    using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+                    {
+                        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                        httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                        httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                        httpRequestMessage.Headers.Add("Accept", "*/*");
+                        httpRequestMessage.Headers.Add("x-csrf-token", csrf_token);
+                        httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                        httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+                        httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                        httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                        httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                        httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                        result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                        Thread.Sleep(100);
+
+                        for (int z = 0; z < result.Length; z++)
+                        {
+                            if (result[z] == "balance")
+                            {
+                                balance = result[z + 1].ToString().Substring(1, result[z + 1].Length - 3);
+                                UpdateLog2(balance.ToString());
+
+                                spreed_write(Convert.ToInt32(balance), spreed_read() + (i + 2).ToString());
+
+                                break;
+                            }
+                        }
+
+
+                    }
+
+                    baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats_initial&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+                    using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(data_get_proxy(i)) })
+                    using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+                    {
+                        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                        httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                        httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                        httpRequestMessage.Headers.Add("Accept", "*/*");
+                        httpRequestMessage.Headers.Add("x-csrf-token", csrf_token);
+                        httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                        httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+                        httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                        httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                        httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                        httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+
+                        result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                        Thread.Sleep(100);
+
+                        for (int z = 0; z < result.Length; z++)
+                        {
+                            if (result[z] == "free_spins_played")
+                            {
+                                free_spins_played = result[z + 1].ToString().Substring(1, result[z + 1].Length - 2);
+                                UpdateLog2(free_spins_played.ToString());
+
+                                spreed_write(Convert.ToInt32(free_spins_played), spreed_read() + (i + 20).ToString());
+
+                                break;
+                            }
+
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+
+                    return;
+                }
+            });
+        }
 
         public void screen()
         {
@@ -462,71 +733,77 @@ namespace Fuset
         {
             string[] result;
 
-
-            SQLiteCommand Command;//m_sqlCmd
-            SQLiteDataReader Reader;//sqlite_datareader
-
-
-            Command = m_dbConn.CreateCommand();
-            Command.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
-            Reader = Command.ExecuteReader();
-            Reader.Read();
-            string Cookie = Reader.GetString(0);
-            Reader.Close();
-
-            Command = m_dbConn.CreateCommand();
-            Command.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
-            Reader = Command.ExecuteReader();
-            Reader.Read();
-            string csrf_token = Reader.GetString(0);
-            Reader.Close();
-
-            Command = m_dbConn.CreateCommand();
-            Command.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
-            Reader = Command.ExecuteReader();
-            Reader.Read();
-            int u = Reader.GetInt32(0);
-            Reader.Close();
-
-            Command = m_dbConn.CreateCommand();
-            Command.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
-            Reader = Command.ExecuteReader();
-            Reader.Read();
-            string p = Reader.GetString(0);
-            Reader.Close();
-
-
-            var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
-            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(data_get_proxy(i)) })
-            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            try
             {
-                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
-                httpRequestMessage.Headers.Add("Host", "freebitco.in");
-                httpRequestMessage.Headers.Add("Connection", "keep-alive");
-                httpRequestMessage.Headers.Add("Accept", "*/*");
-                httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
-                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
-                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
-                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
-                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
-                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
-                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+                SQLiteCommand Command;//m_sqlCmd
+                SQLiteDataReader Reader;//sqlite_datareader
 
 
-                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
-                Thread.Sleep(100);
+                Command = m_dbConn.CreateCommand();
+                Command.CommandText = "SELECT Cookie FROM Cookie_setting WHERE id = " + i;
+                Reader = Command.ExecuteReader();
+                Reader.Read();
+                string Cookie = Reader.GetString(0);
+                Reader.Close();
+
+                Command = m_dbConn.CreateCommand();
+                Command.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
+                Reader = Command.ExecuteReader();
+                Reader.Read();
+                string csrf_token = Reader.GetString(0);
+                Reader.Close();
+
+                Command = m_dbConn.CreateCommand();
+                Command.CommandText = "SELECT u FROM Cookie_setting WHERE id = " + i;
+                Reader = Command.ExecuteReader();
+                Reader.Read();
+                int u = Reader.GetInt32(0);
+                Reader.Close();
+
+                Command = m_dbConn.CreateCommand();
+                Command.CommandText = "SELECT p FROM Cookie_setting WHERE id = " + i;
+                Reader = Command.ExecuteReader();
+                Reader.Read();
+                string p = Reader.GetString(0);
+                Reader.Close();
 
 
-
-                if (Convert.ToDouble(result[result.Length - 2].Replace(".", ",")) <= 0)
+                var baseAddress = new Uri("https://freebitco.in/stats_new_private/?u=" + u + "&p=" + p + "&f=user_stats&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+                using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(data_get_proxy(i)) })
+                using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
                 {
-                    return 0;
-                }
-                else
-                {
-                    return Convert.ToDouble(result[result.Length - 2].Replace(".", ","));
-                }
+                    var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                    httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                    httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                    httpRequestMessage.Headers.Add("Accept", "*/*");
+                    httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
+                    httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                    httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+                    httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                    httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                    httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                    httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
 
+
+                    result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { '"' });
+                    Thread.Sleep(100);
+
+
+
+                    if (Convert.ToDouble(result[result.Length - 2].Replace(".", ",")) <= 0)
+                    {
+                        return 0;
+                    }
+                    else
+                    {
+                        return Convert.ToDouble(result[result.Length - 2].Replace(".", ","));
+                    }
+
+                }
+            }
+            catch
+            {
+                return 0;
             }
         }
 
@@ -733,45 +1010,53 @@ namespace Fuset
 
         string Bet(string Cookie, string csrf_token, string bet, string proxy)
         {
-            Random random = new Random();
-            string[] result;
-            string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxz";
-            string rand = "0123456789";
-            chars = new string(Enumerable.Repeat(chars, 16).Select(s => s[random.Next(s.Length)]).ToArray());
-            rand = new string(Enumerable.Repeat(rand, 17).Select(s => s[random.Next(s.Length)]).ToArray());
-
-            var baseAddress = new Uri("https://freebitco.in/cgi-bin/bet.pl?m=hi&client_seed=" + chars + "&jackpot=0&stake=" + bet.Replace(",", ".") + "&multiplier=2.00&rand=0." + rand + "&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
-            using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(proxy) }) //, UseProxy = true, Proxy = new WebProxy(proxy) 
-            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            try
             {
-                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
-                httpRequestMessage.Headers.Add("Host", "freebitco.in");
-                httpRequestMessage.Headers.Add("Connection", "keep-alive");
-                httpRequestMessage.Headers.Add("Accept", "*/*");
-                httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
-                httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
-                httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
-                httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
-                httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
-                httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
-                httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
+
+                Random random = new Random();
+                string[] result;
+                string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxz";
+                string rand = "0123456789";
+                chars = new string(Enumerable.Repeat(chars, 16).Select(s => s[random.Next(s.Length)]).ToArray());
+                rand = new string(Enumerable.Repeat(rand, 17).Select(s => s[random.Next(s.Length)]).ToArray());
+
+                var baseAddress = new Uri("https://freebitco.in/cgi-bin/bet.pl?m=hi&client_seed=" + chars + "&jackpot=0&stake=" + bet.Replace(",", ".") + "&multiplier=2.00&rand=0." + rand + "&csrf_token=" + csrf_token);//csrf_token=5qSeDTS7kOuM
+                using (var handler = new HttpClientHandler { UseCookies = false, AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, UseProxy = true, Proxy = new WebProxy(proxy) }) //, UseProxy = true, Proxy = new WebProxy(proxy) 
+                using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+                {
+                    var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, baseAddress);
+                    httpRequestMessage.Headers.Add("Host", "freebitco.in");
+                    httpRequestMessage.Headers.Add("Connection", "keep-alive");
+                    httpRequestMessage.Headers.Add("Accept", "*/*");
+                    httpRequestMessage.Headers.Add("x-csrf-token", "5qSeDTS7kOuM");
+                    httpRequestMessage.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                    httpRequestMessage.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36");
+                    httpRequestMessage.Headers.Add("Referer", "https://freebitco.in/");
+                    httpRequestMessage.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+                    httpRequestMessage.Headers.Add("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                    httpRequestMessage.Headers.Add("Cookie", Cookie);//__cfduid=d2b96ce17dae0d3efb78035d3691b39f61529329108; csrf_token=5qSeDTS7kOuM; _ga=GA1.2.1222776224.1529329112; have_account=1; free_play_sound=1; cookieconsent_dismissed=yes; hide_pass_reuse2_msg=1; hide_earn_btc_msg=1; hide_m_btc_comm_inc_msg=1; default_captcha=double_captchas; _gid=GA1.2.340769844.1540792310; btc_address=1JhVKTqeQBXdEwRXhrjao45uLF8dB2RQnb; password=ee6a35b5074bf90c471d5900b3d489edcba04dbc34b8d18dd1d98e1d80762cc9; login_auth=e8992cf572d6575fd03b16f3f20c0e6ac5945b7c17ce83ac69bcdeabc2eafc0e;
 
 
-                result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { ':' });
-                Thread.Sleep(100);
-                //UpdateLog2(result[1].ToString());
-                try
-                {
-                    return result[1];
-                }
-                catch (Exception)
-                {
-                    foreach (var item in result)
+                    result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { ':' });
+                    Thread.Sleep(100);
+                    //UpdateLog2(result[1].ToString());
+                    try
                     {
-                        UpdateLog2(item.ToString());
+                        return result[1];
                     }
-                    return "w";
+                    catch (Exception)
+                    {
+                        foreach (var item in result)
+                        {
+                            UpdateLog2(item.ToString());
+                        }
+                        return "w";
+                    }
                 }
+            }
+            catch
+            {
+                return "w";
             }
         }
 
@@ -809,11 +1094,11 @@ namespace Fuset
                 multiply_list.Add(i);
 
                 double wager = check_multiply2(i);
+                UpdateLog2(wager.ToString());
 
-
-                if (wager > 0.00005)
+                if (wager > 0.00002)
                 {
-                    wager = 0.00002;
+                    wager = 0.00001;
                 }
                 if (wager == 0)
                 {
@@ -865,49 +1150,63 @@ namespace Fuset
 
         public bool solve_text2(int i, IWebDriver driver, IWebElement image, IWebElement field)
         {
-            Uri imageURL = new Uri(image.GetAttribute("src"));
-
-            String url = imageURL.ToString();
-
-            string localFilename = Application.StartupPath + @"\captcha_images2\12.jpg";
-            using (WebClient client = new WebClient())
+            try
             {
-                WebProxy wp = new WebProxy(data_get_proxy(Convert.ToInt32(i)));
-                client.Proxy = wp;
-                client.DownloadFile(url, localFilename);
-            }
+                Uri imageURL = new Uri(image.GetAttribute("src"));
 
-            String uriString = "http://rucaptcha.com/in.php?key=" + textBox1.Text;
-            WebClient myWebClient = new WebClient();
+                String url = imageURL.ToString();
 
-
-            byte[] responseArray = myWebClient.UploadFile(uriString, localFilename);
-            string text = Encoding.ASCII.GetString(responseArray).Substring(3);                 //ID капчи
-
-
-            byte[] postArray = Encoding.ASCII.GetBytes(text);
-            uriString = "http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=get&id=" + text;
-
-            string solve;
-
-            do
-            {
-                Thread.Sleep(5000);
-                responseArray = myWebClient.UploadData(uriString, postArray);
-                solve = Encoding.ASCII.GetString(responseArray);
-
-            } while (solve == "CAPCHA_NOT_READY");
-
-            solve = solve.Substring(3);
-
-
-            foreach (var item in solve)
-            {
-                Convert.ToInt32(item);
-                if (item >= 48 && item <= 57)
+                string localFilename = Application.StartupPath + @"\captcha_images2\12.jpg";
+                using (WebClient client = new WebClient())
                 {
-                    UpdateLog2("эта капча " + solve + " содержит числа");
+                    WebProxy wp = new WebProxy(data_get_proxy(Convert.ToInt32(i)));
+                    client.Proxy = wp;
+                    client.DownloadFile(url, localFilename);
+                }
 
+                String uriString = "http://rucaptcha.com/in.php?key=" + textBox1.Text;
+                WebClient myWebClient = new WebClient();
+
+
+                byte[] responseArray = myWebClient.UploadFile(uriString, localFilename);
+                string text = Encoding.ASCII.GetString(responseArray).Substring(3);                 //ID капчи
+
+
+                byte[] postArray = Encoding.ASCII.GetBytes(text);
+                uriString = "http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=get&id=" + text;
+
+                string solve;
+
+                do
+                {
+                    Thread.Sleep(5000);
+                    responseArray = myWebClient.UploadData(uriString, postArray);
+                    solve = Encoding.ASCII.GetString(responseArray);
+
+                } while (solve == "CAPCHA_NOT_READY");
+
+                solve = solve.Substring(3);
+
+
+                foreach (var item in solve)
+                {
+                    Convert.ToInt32(item);
+                    if (item >= 48 && item <= 57)
+                    {
+                        UpdateLog2("эта капча " + solve + " содержит числа");
+
+
+                        uriString = "http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=reportbad&id=" + text;
+                        responseArray = myWebClient.UploadData(uriString, postArray);
+                        UpdateLog2(Encoding.ASCII.GetString(responseArray));
+
+                        return false;
+                    }
+                }
+
+                if (solve.Length != 6)
+                {
+                    UpdateLog2("эта капча " + solve + " не из 6 символов");
 
                     uriString = "http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=reportbad&id=" + text;
                     responseArray = myWebClient.UploadData(uriString, postArray);
@@ -915,23 +1214,16 @@ namespace Fuset
 
                     return false;
                 }
+
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", field);
+                field.SendKeys(solve);
+                Thread.Sleep(500);
+                return true;
             }
-
-            if (solve.Length != 6)
+            catch (Exception)
             {
-                UpdateLog2("эта капча " + solve + " не из 6 символов");
-
-                uriString = "http://rucaptcha.com/res.php?key=" + textBox1.Text + "&action=reportbad&id=" + text;
-                responseArray = myWebClient.UploadData(uriString, postArray);
-                UpdateLog2(Encoding.ASCII.GetString(responseArray));
-
                 return false;
             }
-
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", field);
-            field.SendKeys(solve);
-            Thread.Sleep(500);
-            return true;
         }
 
         public void send_vk(string text, IWebDriver driver)
@@ -1137,7 +1429,7 @@ namespace Fuset
 
                 enable_list.Add(sqlite_datareader.GetInt32(0));
 
-                
+
                 sqlite_datareader.Close();
                 i++;
             }
@@ -1173,35 +1465,43 @@ namespace Fuset
 
         public string data_get_proxy(int id_prof)
         {
-            if (id_prof == 777)
+            try
             {
-                return " ";
-            }
 
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT proxy FROM Setting WHERE id = " + id_prof;
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-
-            string proxy = sqlite_datareader.GetString(0);
-
-            if (proxy == " ")
-            {
-                proxy_change(id_prof);
+                if (id_prof == 777)
+                {
+                    return " ";
+                }
 
                 m_sqlCmd = m_dbConn.CreateCommand();
                 m_sqlCmd.CommandText = "SELECT proxy FROM Setting WHERE id = " + id_prof;
                 sqlite_datareader = m_sqlCmd.ExecuteReader();
                 sqlite_datareader.Read();
 
-                proxy = sqlite_datareader.GetString(0);
-                sqlite_datareader.Close();
-                return proxy;
+                string proxy = sqlite_datareader.GetString(0);
+
+                if (proxy == " ")
+                {
+                    //proxy_change(id_prof);
+
+                    //m_sqlCmd = m_dbConn.CreateCommand();
+                    //m_sqlCmd.CommandText = "SELECT proxy FROM Setting WHERE id = " + id_prof;
+                    //sqlite_datareader = m_sqlCmd.ExecuteReader();
+                    //sqlite_datareader.Read();
+
+                    //proxy = sqlite_datareader.GetString(0);
+                    //sqlite_datareader.Close();
+                    return " ";
+                }
+                else
+                {
+                    sqlite_datareader.Close();
+                    return proxy;
+                }
             }
-            else
+            catch
             {
-                sqlite_datareader.Close();
-                return proxy;
+                return "none";
             }
         }
 
@@ -1680,42 +1980,42 @@ namespace Fuset
                 Thread.Sleep(100);
             }
 
-                for (int x = 0; x < result.Length + 1; x++)
+            for (int x = 0; x < result.Length + 1; x++)
+            {
+                if (result[x] == "reward_points")
                 {
-                    if (result[x] == "reward_points")
-                    {
-                        RP = Convert.ToInt32(result[x + 2]);
-                        break;
-                    }
+                    RP = Convert.ToInt32(result[x + 2]);
+                    break;
                 }
-                
-                UpdateLog2("чистое рп - " + RP.ToString());
+            }
 
-                if (RP >= 12 && RP < 120)
-                    bonus_RP = 1;
-                if (RP >= 120 && RP < 300)
-                    bonus_RP = 10;
-                if (RP >= 300 && RP < 600)
-                    bonus_RP = 25;
-                if (RP >= 600 && RP < 1200)
-                    bonus_RP = 50;
-                if (RP >= 1200)
-                    bonus_RP = 100;
+            UpdateLog2("чистое рп - " + RP.ToString());
+
+            if (RP >= 12 && RP < 120)
+                bonus_RP = 1;
+            if (RP >= 120 && RP < 300)
+                bonus_RP = 10;
+            if (RP >= 300 && RP < 600)
+                bonus_RP = 25;
+            if (RP >= 600 && RP < 1200)
+                bonus_RP = 50;
+            if (RP >= 1200)
+                bonus_RP = 100;
 
             if (bonus_RP == 11111111)
                 return;
 
-                RP -= 2400;
+            RP -= 2400;
 
-                UpdateLog2("рп за минусом 1200 - " + RP.ToString());
-                UpdateLog2("активированный бонус на - " + bonus_RP.ToString());
+            UpdateLog2("рп за минусом 1200 - " + RP.ToString());
+            UpdateLog2("активированный бонус на - " + bonus_RP.ToString());
 
-                if (RP >= 320 && RP < 1600)
-                    bonus_BTC = 100;
-                if (RP >= 1600 && RP < 3200)
-                    bonus_BTC = 500;
-                if (RP >= 3200)
-                    bonus_BTC = 1000;
+            if (RP >= 320 && RP < 1600)
+                bonus_BTC = 100;
+            if (RP >= 1600 && RP < 3200)
+                bonus_BTC = 500;
+            if (RP >= 3200)
+                bonus_BTC = 1000;
 
             UpdateLog2("бонус БТС - " + bonus_BTC.ToString());
 
@@ -1777,6 +2077,7 @@ namespace Fuset
             await Task.Run(() =>
             {
                 multiply3(i);
+                
                 options = new ChromeOptions();
                 Proxy proxy = new Proxy();
                 proxy.Kind = ProxyKind.Manual;
@@ -1784,7 +2085,7 @@ namespace Fuset
                 proxy.HttpProxy = data_get_proxy(i);
                 proxy.SslProxy = data_get_proxy(i);
                 options.Proxy = proxy;
-                options.AddArgument("ignore-certificate-errors");
+                options.AddArgument("ignore-certificate-errors");//
                 //options.AddArgument("--headless");
                 options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
                 options.AddArguments("--start-maximized");
@@ -1841,14 +2142,14 @@ namespace Fuset
                     driver.Quit();
                     busy = false;
                     return;
-            }
+                }
                 catch (Exception ex)
-            {
-                UpdateLog2("(" + i + ")Кулдаун не обнаружен." + ex);
+                {
+                    UpdateLog2("(" + i + ")Кулдаун не обнаружен." + ex);
 
-            }
+                }
 
-            try
+                try
                 {
                     if (IsElementVisible(driver.FindElement(By.Id("free_play_form_button"))))
                     {
@@ -1865,6 +2166,9 @@ namespace Fuset
                         catch (Exception)
                         {
                             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.Id("free_play_form_button")));
+
+                            if (checkBox1.Checked)
+                                bonus2(i);
 
                             driver.FindElement(By.Id("free_play_form_button")).Click();
                             UpdateLog2("(" + i + ")Сбор без капчи.");
@@ -2054,7 +2358,9 @@ namespace Fuset
                 {
                     busy = true;
                     UpdateLog2("(" + i + ")Stepped = " + i);
+                    spreed_write_balance(i);
                     stepped = i;
+
                     Step3(i);
                 }
 
@@ -2096,6 +2402,10 @@ namespace Fuset
 
         private void Form1_Load(object sender, EventArgs e)
         {
+
+
+
+
             m_dbConn = new SQLiteConnection();
             m_sqlCmd = new SQLiteCommand();
 
@@ -2161,6 +2471,12 @@ namespace Fuset
 
             }
 
+            
+
+
+
+            
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -2182,72 +2498,17 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            if (textBox5.Text.Length == 0)
-            {
-                MessageBox.Show("Не выбран аккаунт", "Error", MessageBoxButtons.OK);
-                return;
-            }
+            int i = Convert.ToInt32(textBox5.Text);
+
+            spreed_write_balance(i);
 
 
-            options = new ChromeOptions();
-            Proxy proxy = new Proxy();
-            proxy.Kind = ProxyKind.Manual;
-            proxy.IsAutoDetect = false;
-            proxy.HttpProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-            proxy.SslProxy = data_get_proxy(Convert.ToInt32(textBox5.Text));
-            options.Proxy = proxy;
-            options.AddArgument("ignore-certificate-errors");
 
-            options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(Convert.ToInt32(textBox5.Text)));
-            options.AddArguments("--start-maximized");
-            driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(120);
-            driver.Navigate().GoToUrl("https://freebitco.in/");
+            //DateTime.Now
 
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
-            try
-            {
-                if (!IsElementVisible(driver.FindElement(By.Id("free_play_double_captchas"))) && IsElementVisible(driver.FindElement(By.Id("free_play_recaptcha"))))
-                {
-                    driver.FindElement(By.Id("switch_captchas_button")).Click();
-                }
-
-                wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img")));
-
-                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/input[2]")));
-
-            }
-            catch (Exception)
-            {
-
-                
-            }
-
-            IWebElement logo = driver.FindElement(By.XPath("//*[@id='botdetect_free_play_captcha']/div[1]/img"));
-            string logoSRC = logo.GetAttribute("src");
-
-            UpdateLog2(logoSRC);
-
-
-            string localFilename = Application.StartupPath + @"\captcha_images2\test.jpg";
-
-            using (WebClient client = new WebClient())
-            {
-                WebProxy wp = new WebProxy(data_get_proxy(Convert.ToInt32(textBox5.Text)));
-                client.Proxy = wp;
-                client.DownloadFile(logoSRC, localFilename);
-            }
-            
-            
-
-            //Uri imageURL = new Uri(logoSRC);
-            //BufferedImage saveImage = ImageIO.read(imageURL);
-
-            //Image.write(saveImage, "png", new File("logo-image.png"));
+            //spreed_read(textBox5.Text);
         }
-        
+
         private void button7_Click(object sender, EventArgs e)//обновление
         {
             DataGridUpdate1();
