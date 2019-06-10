@@ -1039,7 +1039,11 @@ namespace Fuset
 
                     result = client.SendAsync(httpRequestMessage).Result.Content.ReadAsStringAsync().Result.Split(new char[] { ':' });
                     Thread.Sleep(100);
-                    //UpdateLog2(result[1].ToString());
+                    
+                    foreach (var item in result)
+                    {
+                        UpdateLog2(item.ToString());
+                    }
                     try
                     {
                         return result[1];
@@ -2498,15 +2502,8 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            int i = Convert.ToInt32(textBox5.Text);
-
-            spreed_write_balance(i);
-
-
-
-            //DateTime.Now
-
-            //spreed_read(textBox5.Text);
+            Bet("__cfduid=da64ec5bb05f359d9dd57afe157bdaa391549521181; csrf_token=mVfooE51Pwu3; _ga=GA1.2.1569179604.1549521179; have_account=1; _gid=GA1.2.1642383375.1559544672; cookieconsent_dismissed=yes; last_play=1559546880; default_captcha=double_captchas; referrer=16081249; btc_address=1JRFrRLC28tTCT5U5HaTp5jo53EGjP4GES; password=086ef8d98a38dbd4e00acb3d6bdaac92ad5390b03127a382410a32dc3783828d; login_auth=6a99d92c8d88ba0256fd146dee8530d91ef308908146eb2821345deecf5244fe; _gat=1",
+                "mVfooE51Pwu3", "0.00000001", "185.189.135.15:4045");
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
