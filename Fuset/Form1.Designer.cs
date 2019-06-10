@@ -204,10 +204,11 @@
             // 
             // textBox5
             // 
-            this.textBox5.Location = new System.Drawing.Point(142, 69);
+            this.textBox5.Location = new System.Drawing.Point(138, 55);
             this.textBox5.Name = "textBox5";
-            this.textBox5.Size = new System.Drawing.Size(36, 20);
+            this.textBox5.Size = new System.Drawing.Size(45, 20);
             this.textBox5.TabIndex = 28;
+            this.textBox5.Text = "0";
             this.textBox5.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
             // button6
@@ -305,23 +306,23 @@
             // 
             // button8
             // 
-            this.button8.Location = new System.Drawing.Point(106, 68);
+            this.button8.Location = new System.Drawing.Point(188, 52);
             this.button8.Name = "button8";
-            this.button8.Size = new System.Drawing.Size(30, 23);
+            this.button8.Size = new System.Drawing.Size(26, 23);
             this.button8.TabIndex = 41;
-            this.button8.Text = "<";
+            this.button8.Text = ">";
             this.button8.UseVisualStyleBackColor = true;
-            this.button8.Click += new System.EventHandler(this.button8_Click);
+            this.button8.Click += new System.EventHandler(this.Button8_Click);
             // 
             // button9
             // 
-            this.button9.Location = new System.Drawing.Point(184, 67);
+            this.button9.Location = new System.Drawing.Point(106, 52);
             this.button9.Name = "button9";
-            this.button9.Size = new System.Drawing.Size(30, 23);
+            this.button9.Size = new System.Drawing.Size(26, 23);
             this.button9.TabIndex = 42;
-            this.button9.Text = ">";
+            this.button9.Text = "<";
             this.button9.UseVisualStyleBackColor = true;
-            this.button9.Click += new System.EventHandler(this.button9_Click);
+            this.button9.Click += new System.EventHandler(this.Button9_Click);
             // 
             // Form1
             // 
