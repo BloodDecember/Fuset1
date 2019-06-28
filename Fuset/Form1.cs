@@ -51,20 +51,19 @@ namespace Fuset
         bool busy1 = false;
 
         bool multiply_busy = false;
-        IWebElement logo;
-        String logoSRC;
-        Uri imageURL;
+        
+        
+        
         List<int> timing_list = new List<int>();
         List<int> multiply_list = new List<int>();
         List<double> multiply3_list = new List<double>();
         List<int> enable_list = new List<int>();
         List<int> in_work = new List<int>();
-
-        ChromeOptions options;
-        public IWebDriver driver;
-        public IWebDriver driver1;
-
-
+        List<string> proxy_list = new List<string>();
+        List<string> cookie_list = new List<string>();
+        List<string> csrf_token_list = new List<string>();
+        List<string> u_list = new List<string>();
+        List<string> p_list = new List<string>();
 
         static string[] Scopes = { SheetsService.Scope.Spreadsheets };
         static string ApplicationName = "Fuset1";
@@ -78,8 +77,55 @@ namespace Fuset
         SQLiteDataReader sqlite_datareader;
 
 
-        
 
+        public void get_lists()
+        {
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT proxy FROM Proxy_list";
+            SQLiteDataReader reader = m_sqlCmd.ExecuteReader();
+            while (reader.Read())
+            {
+                proxy_list.Add(reader.GetString(0));
+            }
+            reader.Close();
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT Cookie FROM Cookie_setting";
+            reader = m_sqlCmd.ExecuteReader();
+            while (reader.Read())
+            {
+                cookie_list.Add(reader.GetString(0));
+            }
+            reader.Close();
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting";
+            reader = m_sqlCmd.ExecuteReader();
+            while (reader.Read())
+            {
+                csrf_token_list.Add(reader.GetString(0));
+            }
+            reader.Close();
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT u FROM Cookie_setting";
+            reader = m_sqlCmd.ExecuteReader();
+            while (reader.Read())
+            {
+                u_list.Add(reader.GetString(0));
+            }
+            reader.Close();
+
+            m_sqlCmd = m_dbConn.CreateCommand();
+            m_sqlCmd.CommandText = "SELECT p FROM Cookie_setting";
+            reader = m_sqlCmd.ExecuteReader();
+            while (reader.Read())
+            {
+                p_list.Add(reader.GetString(0));
+            }
+            reader.Close();
+
+        }
         public char spreed_read()
         {
             char column = 'A';
@@ -1435,11 +1481,9 @@ namespace Fuset
 
 
 
-            while (reader.Read()) // построчно считываем данные
+            while (reader.Read()) // построчно считываем данные (при каждом запуске считывает значение)
             {
-                //object id = reader.GetValue(0);
                 timing_list.Insert(Convert.ToInt32(reader.GetValue(0)), 0);
-
             }
 
             reader.Close();
@@ -1552,6 +1596,9 @@ namespace Fuset
         public bool simple_captcha2(IWebDriver driver, int i)
         {
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            IWebElement logo;
+            String logoSRC;
+            Uri imageURL;
 
             try
             {
@@ -2146,9 +2193,9 @@ namespace Fuset
                     return;
                 }
 
-                
 
-                options = new ChromeOptions();
+                ChromeOptions options = new ChromeOptions();
+                IWebDriver driver;
                 Proxy proxy = new Proxy();
                 proxy.Kind = ProxyKind.Manual;
                 proxy.IsAutoDetect = false;
@@ -2400,294 +2447,6 @@ namespace Fuset
             
         }
 
-        public async void Step3_1(int i)
-        {
-            await Task.Run(() =>
-            {
-                
-                if (i == timing_list.Count() - 1)
-                {
-                    for (int y = 0; y < timing_list.Count() - 1; y++)
-                    {
-                        spreed_write_balance(y);
-                    }
-
-                    timing_list[i] = 3600;
-                    UpdateLog2("Баланс и сборы записаны.");
-                    busy = false;
-                    in_work.Remove(i);
-                    return;
-                }
-
-
-
-                options = new ChromeOptions();
-                Proxy proxy = new Proxy();
-                proxy.Kind = ProxyKind.Manual;
-                proxy.IsAutoDetect = false;
-                proxy.HttpProxy = data_get_proxy(i);
-                proxy.SslProxy = data_get_proxy(i);
-                options.Proxy = proxy;
-                options.AddArgument("ignore-certificate-errors");
-                //options.AddArguments("--disable-gpu");
-                options.AddArgument("--window-size=1920x1080");
-
-                if (checkBox5.Checked)
-                {
-                    options.AddArgument("--headless");
-                }
-
-                //options.AddArgument("--headless");
-                options.AddArguments(@"user-data-dir=" + Application.StartupPath + @"\" + data_get_prof(i));
-                options.AddArguments("--start-maximized");
-
-                var driverService = ChromeDriverService.CreateDefaultService();
-                driverService.HideCommandPromptWindow = true;
-
-                driver1 = new ChromeDriver(driverService, options);
-                driver1.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-
-                WebDriverWait wait = new WebDriverWait(driver1, TimeSpan.FromSeconds(10));
-
-
-
-                try
-                {
-                    UpdateLog2("(" + i + ")Загрузка страницы...");
-                    driver1.Navigate().GoToUrl("https://freebitco.in/");
-                }
-                catch (Exception)
-                {
-                    UpdateLog2("(" + i + ")Страница не загрузилась.");
-                    driver1.Quit();
-                    busy = false;
-                    in_work.Remove(i);
-
-                    return;
-                }
-
-                m_sqlCmd = m_dbConn.CreateCommand();
-                m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting WHERE id = " + i;
-                sqlite_datareader = m_sqlCmd.ExecuteReader();
-                sqlite_datareader.Read();
-                string csrf_token = sqlite_datareader.GetString(0);
-                sqlite_datareader.Close();
-
-                var _cookies = driver1.Manage().Cookies.GetCookieNamed("csrf_token").ToString().Split(new char[] { ';' });
-
-
-
-                if (_cookies[0].Substring(11) == csrf_token)
-                {
-                    UpdateLog2("(" + i + ") " + _cookies[0].Substring(11) + " соответствует базе");
-                }
-                else
-                {
-                    UpdateLog2("(" + i + ") " + _cookies[0].Substring(11) + " не соответствует базе " + csrf_token);
-                    m_sqlCmd.CommandText = "update Cookie_setting set csrf_token = '" + _cookies[0].Substring(11) + "' where id = " + i;
-                    m_sqlCmd.ExecuteNonQuery();
-                }
-
-                multiply3(i);
-
-
-                try
-                {
-                    UpdateLog2("(" + i + ")Поиск кулдауна...");
-                    wait.Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
-                    //Thread.Sleep(1000);
-                    timing_list[i] = Convert.ToInt32(driver1.FindElement(By.Id("time_remaining")).Text.Split(new char[] { '\r' })[0]) * 60 + 10;
-                    UpdateLog2(timing_list[i] + "");
-
-                    if (timing_list[i] > 2000)
-                    {
-                        UpdateLog2("(" + i + ")Кулдаун заменен с " + timing_list[i] + " на 2000.");
-                        timing_list[i] = 2000;
-                    }
-
-
-                    driver1.Quit();
-                    busy = false;
-                    in_work.Remove(i);
-
-                    return;
-                }
-                catch (Exception)
-                {
-                    UpdateLog2("(" + i + ")Кулдаун не обнаружен.");
-
-                }
-
-                try
-                {
-                    if (IsElementVisible(driver1.FindElement(By.Id("free_play_form_button"))))
-                    {
-                        UpdateLog2("(" + i + ")Кнопка сбора найдена.");
-
-                        try
-                        {
-                            if (IsElementVisible(driver1.FindElement(By.Id("play_without_captcha_container"))))
-                            {
-
-                            }
-
-                        }
-                        catch (Exception)
-                        {
-                            ((IJavaScriptExecutor)driver1).ExecuteScript("arguments[0].scrollIntoView(true);", driver1.FindElement(By.Id("free_play_form_button")));
-
-                            if (checkBox1.Checked)
-                                bonus2(i);
-
-                            try
-                            {
-                                driver1.FindElement(By.CssSelector("#push_notification_modal > div.push_notification_big > div:nth-child(2) > div > div.pushpad_deny_button")).Click();
-                                Thread.Sleep(1500);
-                            }
-                            catch (Exception)
-                            {
-
-                            }
-
-                            driver1.FindElement(By.Id("free_play_form_button")).Click();
-                            UpdateLog2("(" + i + ")Сбор без капчи.");
-
-                            wait.Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
-
-                            timing_list[i] = Convert.ToInt32(driver1.FindElement(By.Id("time_remaining")).Text.Split(new char[] { '\r' })[0]) * 60 + 10;
-
-
-                            if (timing_list[i] > 2000)
-                            {
-                                UpdateLog2("(" + i + ")Кулдаун заменен с " + timing_list[i] + " на 2000.");
-                                timing_list[i] = 2000;
-                            }
-
-                            driver1.Quit();
-
-                            busy = false;
-                            in_work.Remove(i);
-
-                            return;
-
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    UpdateLog2("(" + i + ")Кнопка сбора не найдена.");
-                    driver1.Quit();
-                    busy = false;
-                    in_work.Remove(i);
-
-                    return;
-                }
-
-
-
-
-                try
-                {
-                    driver1.FindElement(By.Id("switch_captchas_button"));
-                    UpdateLog2("(" + i + ")Есть текстовая капча.");
-                }
-                catch (Exception)
-                {
-
-
-                    UpdateLog2("(" + i + ")Текстовая капча недоступна " + i + " поставлена в очередь мультика.");
-                    multiply3(i);
-                    timing_list[i] = 1000;
-                    driver1.Quit();
-                    busy = false;
-                    in_work.Remove(i);
-
-                    return;
-                }
-
-
-
-                do
-                {
-                    if (simple_captcha2(driver1, i))
-                    {
-
-                    }
-                    else
-                    {
-                        driver1.Quit();
-                        busy = false;
-                        in_work.Remove(i);
-
-                        break;
-                    }
-
-                    //if (checkBox1.Checked && !checkBox5.Checked)
-                    //    bonus(driver);
-
-                    if (checkBox1.Checked)
-                        bonus2(i);
-
-                    try
-                    {
-
-                        ((IJavaScriptExecutor)driver1).ExecuteScript("arguments[0].scrollIntoView(true);", driver1.FindElement(By.Id("free_play_form_button")));
-
-                        driver1.FindElement(By.Id("free_play_form_button")).Click();
-
-                        wait.Until(ExpectedConditions.ElementIsVisible(By.Id("time_remaining")));
-
-                        timing_list[i] = Convert.ToInt32(driver1.FindElement(By.Id("time_remaining")).Text.Split(new char[] { '\r' })[0]) * 60 + 10;
-
-
-                        if (timing_list[i] > 2000)
-                        {
-                            UpdateLog2("(" + i + ")Кулдаун заменен с " + timing_list[i] + " на 2000.");
-                            timing_list[i] = 2000;
-                        }
-
-                        driver1.Quit();
-
-                        busy = false;
-                        in_work.Remove(i);
-
-                        return;
-                    }
-                    catch (Exception)
-                    {
-                        driver1.Navigate().Refresh();
-
-                        try
-                        {
-                            wait.Until(ExpectedConditions.ElementIsVisible(By.Id("free_play_form_button")));
-                        }
-                        catch (Exception)
-                        {
-                        }
-                    }
-
-
-
-                } while (IsElementVisible(driver1.FindElement(By.Id("free_play_form_button"))));
-
-                UpdateLog2("(" + i + ")Stepped пуст.");
-
-
-                try
-                {
-                    driver1.Quit();
-                    busy = false;
-                    UpdateLog2("(" + i + ")Дно шага.");
-                    in_work.Remove(i);
-
-                }
-                catch (Exception)
-                {
-                }
-            });
-
-
-        }
 
         public Form1()
         {
@@ -2717,6 +2476,8 @@ namespace Fuset
                 return;
             }
 
+            ChromeOptions options = new ChromeOptions();
+            IWebDriver driver;
 
             options = new ChromeOptions();
             Proxy proxy = new Proxy();
@@ -2764,11 +2525,6 @@ namespace Fuset
                 m_sqlCmd.CommandText = "update Cookie_setting set csrf_token = '" + _cookies[0].Substring(11) + "' where id = " + i;
                 m_sqlCmd.ExecuteNonQuery();
             }
-
-
-
-
-
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -2843,7 +2599,7 @@ namespace Fuset
         private void Form1_Load(object sender, EventArgs e)
         {
             KillChrome("chromedriver");
-
+            get_lists();
 
 
             m_dbConn = new SQLiteConnection();
@@ -2938,32 +2694,13 @@ namespace Fuset
 
         public async void button6_Click(object sender, EventArgs e)//тестовая кнопка
         {
-            m_sqlCmd = m_dbConn.CreateCommand();
-            m_sqlCmd.CommandText = "SELECT csrf_token FROM Cookie_setting";
-            sqlite_datareader = m_sqlCmd.ExecuteReader();
-            sqlite_datareader.Read();
-            string csrf_token = sqlite_datareader.GetString(0);
-            sqlite_datareader.Close();
-
-            UpdateLog2(csrf_token);
+            get_lists();
 
         }
 
         private void button7_Click(object sender, EventArgs e)//обновление
         {
-            try
-            {
-                Screenshot ss = ((ITakesScreenshot)driver).GetScreenshot();
-
-
-                string screenshot = ss.AsBase64EncodedString;
-                byte[] screenshotAsByteArray = ss.AsByteArray;
-                ss.SaveAsFile(Application.StartupPath + @"\captcha_images2\skreen.jpg");
-            }
-            catch (Exception)
-            {
-
-            }
+            
         }
 
         private void форматСпискаПрофилейToolStripMenuItem_Click(object sender, EventArgs e)
